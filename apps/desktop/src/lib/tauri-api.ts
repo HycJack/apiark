@@ -1,6 +1,7 @@
 import type {
   SendRequestParams,
   ResponseData,
+  ScriptedResponseData,
   HttpError,
   CollectionNode,
   RequestFile,
@@ -74,6 +75,32 @@ export async function sendRequest(
       variables: variables ?? null,
       collectionPath: collectionPath ?? null,
       requestName: requestName ?? null,
+    });
+  } catch (err) {
+    handleTauriError(err);
+  }
+}
+
+export async function sendRequestWithScripts(
+  params: SendRequestParams,
+  variables?: Record<string, string>,
+  collectionPath?: string,
+  requestName?: string,
+  preRequestScript?: string | null,
+  postResponseScript?: string | null,
+  testScript?: string | null,
+  assertionsYaml?: string | null,
+): Promise<ScriptedResponseData> {
+  try {
+    return await invoke<ScriptedResponseData>("send_request_with_scripts", {
+      params,
+      variables: variables ?? null,
+      collectionPath: collectionPath ?? null,
+      requestName: requestName ?? null,
+      preRequestScript: preRequestScript ?? null,
+      postResponseScript: postResponseScript ?? null,
+      testScript: testScript ?? null,
+      assertionsYaml: assertionsYaml ?? null,
     });
   } catch (err) {
     handleTauriError(err);

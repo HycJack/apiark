@@ -2,8 +2,10 @@ import { useState } from "react";
 import { useActiveTab } from "@/stores/tab-store";
 import { AlertCircle } from "lucide-react";
 import { CodeGenerationPanel } from "./code-generation-panel";
+import { TestResultsPanel } from "./test-results-panel";
+import type { ConsoleEntry } from "@apiark/types";
 
-type ResponseTab = "body" | "headers" | "cookies" | "code";
+type ResponseTab = "body" | "headers" | "cookies" | "tests" | "console" | "code";
 
 function statusColor(status: number): string {
   if (status < 200) return "text-blue-400";
@@ -25,14 +27,66 @@ export function ResponsePanel() {
 
   if (!tab) return null;
 
-  const { response, error, loading } = tab;
+  const { response, error, loading, testResults, assertionResults, consoleOutput } = tab;
+
+  const hasTestResults = testResults.length > 0 || assertionResults.length > 0;
+  const failedCount = (testResults?.filter((t) => !t.passed).length ?? 0) +
+    (assertionResults?.filter((a) => !a.passed).length ?? 0);
 
   // Code generation is always available (doesn't need a response)
   if (activeTab === "code") {
     return (
       <div className="flex flex-1 flex-col overflow-hidden">
-        <ResponseTabs activeTab={activeTab} setActiveTab={setActiveTab} response={response} />
+        <ResponseTabs
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          response={response}
+          hasTestResults={hasTestResults}
+          failedCount={failedCount}
+          consoleCount={consoleOutput.length}
+        />
         <CodeGenerationPanel />
+      </div>
+    );
+  }
+
+  // Tests tab can be shown even without a response (shows empty state)
+  if (activeTab === "tests") {
+    return (
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <ResponseTabs
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          response={response}
+          hasTestResults={hasTestResults}
+          failedCount={failedCount}
+          consoleCount={consoleOutput.length}
+        />
+        <div className="flex-1 overflow-auto p-3">
+          <TestResultsPanel
+            testResults={testResults}
+            assertionResults={assertionResults}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Console tab
+  if (activeTab === "console") {
+    return (
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <ResponseTabs
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          response={response}
+          hasTestResults={hasTestResults}
+          failedCount={failedCount}
+          consoleCount={consoleOutput.length}
+        />
+        <div className="flex-1 overflow-auto p-3">
+          <ConsolePanel entries={consoleOutput} />
+        </div>
       </div>
     );
   }
@@ -41,7 +95,14 @@ export function ResponsePanel() {
   if (!response && !error && !loading) {
     return (
       <div className="flex flex-1 flex-col overflow-hidden">
-        <ResponseTabs activeTab={activeTab} setActiveTab={setActiveTab} response={null} />
+        <ResponseTabs
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          response={null}
+          hasTestResults={hasTestResults}
+          failedCount={failedCount}
+          consoleCount={consoleOutput.length}
+        />
         <div className="flex flex-1 items-center justify-center text-sm text-[var(--color-text-dimmed)]">
           Send a request to see the response
         </div>
@@ -92,7 +153,14 @@ export function ResponsePanel() {
       </div>
 
       {/* Tabs */}
-      <ResponseTabs activeTab={activeTab} setActiveTab={setActiveTab} response={response} />
+      <ResponseTabs
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        response={response}
+        hasTestResults={hasTestResults}
+        failedCount={failedCount}
+        consoleCount={consoleOutput.length}
+      />
 
       {/* Content */}
       <div className="flex-1 overflow-auto p-3">
@@ -158,37 +226,92 @@ function ResponseTabs({
   activeTab,
   setActiveTab,
   response,
+  hasTestResults,
+  failedCount,
+  consoleCount,
 }: {
   activeTab: ResponseTab;
   setActiveTab: (tab: ResponseTab) => void;
   response: { headers: { key: string; value: string }[]; cookies: { name: string }[] } | null;
+  hasTestResults: boolean;
+  failedCount: number;
+  consoleCount: number;
 }) {
-  const tabs: ResponseTab[] = ["body", "headers", "cookies", "code"];
+  const tabs: { id: ResponseTab; label: string }[] = [
+    { id: "body", label: "Body" },
+    { id: "headers", label: "Headers" },
+    { id: "cookies", label: "Cookies" },
+    { id: "tests", label: "Tests" },
+    { id: "console", label: "Console" },
+    { id: "code", label: "Code" },
+  ];
 
   return (
     <div className="flex gap-0 border-b border-[var(--color-border)] bg-[var(--color-surface)]">
       {tabs.map((t) => (
         <button
-          key={t}
-          onClick={() => setActiveTab(t)}
-          className={`px-4 py-2 text-sm capitalize transition-colors ${
-            activeTab === t
+          key={t.id}
+          onClick={() => setActiveTab(t.id)}
+          className={`px-4 py-2 text-sm transition-colors ${
+            activeTab === t.id
               ? "border-b-2 border-blue-500 text-[var(--color-text-primary)]"
               : "text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]"
           }`}
         >
-          {t}
-          {t === "headers" && response && (
+          {t.label}
+          {t.id === "headers" && response && (
             <span className="ml-1 text-xs text-[var(--color-text-dimmed)]">
               ({response.headers.length})
             </span>
           )}
-          {t === "cookies" && response && response.cookies.length > 0 && (
+          {t.id === "cookies" && response && response.cookies.length > 0 && (
             <span className="ml-1 text-xs text-[var(--color-text-dimmed)]">
               ({response.cookies.length})
             </span>
           )}
+          {t.id === "tests" && hasTestResults && (
+            <span className={`ml-1 text-xs ${failedCount > 0 ? "text-red-400" : "text-green-500"}`}>
+              {failedCount > 0 ? `${failedCount} fail` : "pass"}
+            </span>
+          )}
+          {t.id === "console" && consoleCount > 0 && (
+            <span className="ml-1 text-xs text-[var(--color-text-dimmed)]">
+              ({consoleCount})
+            </span>
+          )}
         </button>
+      ))}
+    </div>
+  );
+}
+
+function ConsolePanel({ entries }: { entries: ConsoleEntry[] }) {
+  if (entries.length === 0) {
+    return (
+      <div className="flex flex-1 items-center justify-center text-sm text-[var(--color-text-dimmed)]">
+        No console output. Use <code className="rounded bg-[var(--color-elevated)] px-1">console.log()</code> in scripts.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-0.5 font-mono text-sm">
+      {entries.map((entry, i) => (
+        <div
+          key={i}
+          className={`rounded px-2 py-1 ${
+            entry.level === "error"
+              ? "bg-red-500/10 text-red-400"
+              : entry.level === "warn"
+                ? "bg-yellow-500/10 text-yellow-400"
+                : "text-[var(--color-text-primary)]"
+          }`}
+        >
+          <span className="mr-2 text-xs text-[var(--color-text-dimmed)]">
+            [{entry.level}]
+          </span>
+          {entry.message}
+        </div>
       ))}
     </div>
   );

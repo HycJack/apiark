@@ -1,6 +1,7 @@
 mod commands;
 mod http;
 mod models;
+mod scripting;
 mod storage;
 
 use std::sync::{Arc, Mutex};
@@ -12,7 +13,7 @@ use commands::collection::{
 use commands::environment::{get_resolved_variables, load_environments, save_environment};
 use commands::greet;
 use commands::history::{clear_history, delete_history_entry, get_history, search_history, AppState};
-use commands::http::send_request;
+use commands::http::{send_request, send_request_with_scripts};
 use commands::curl::{export_curl_command, parse_curl_command};
 use commands::settings::{get_settings, update_settings, SettingsState};
 use commands::state::{load_persisted_state, save_persisted_state};
@@ -73,6 +74,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             greet,
             send_request,
+            send_request_with_scripts,
             // Collection commands
             open_collection,
             read_request_file,

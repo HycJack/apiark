@@ -122,6 +122,34 @@ export type CollectionNode =
       path: string;
     };
 
+// ── Scripting & Testing ──
+
+export interface TestResult {
+  name: string;
+  passed: boolean;
+  error?: string;
+}
+
+export interface ConsoleEntry {
+  level: string;
+  message: string;
+}
+
+export interface AssertionResult {
+  path: string;
+  operator: string;
+  expected: unknown;
+  actual: unknown;
+  passed: boolean;
+}
+
+export interface ScriptedResponseData extends ResponseData {
+  testResults: TestResult[];
+  assertionResults: AssertionResult[];
+  consoleOutput: ConsoleEntry[];
+  envMutations: Record<string, string | null>;
+}
+
 // ── Request File (on-disk YAML format from Rust) ──
 
 export interface RequestFile {
@@ -133,6 +161,10 @@ export interface RequestFile {
   auth?: AuthConfig;
   body?: { type: string; content: string };
   params?: Record<string, string>;
+  preRequestScript?: string;
+  postResponseScript?: string;
+  tests?: string;
+  assert?: unknown;
 }
 
 // ── Environment ──
@@ -214,8 +246,19 @@ export interface Tab {
   body: RequestBody;
   auth: AuthConfig;
 
+  // Script state
+  preRequestScript: string | null;
+  postResponseScript: string | null;
+  testScript: string | null;
+  assertions: string | null;
+
   // Response state
   response: ResponseData | null;
   error: HttpError | null;
   loading: boolean;
+
+  // Script results (populated after send)
+  testResults: TestResult[];
+  assertionResults: AssertionResult[];
+  consoleOutput: ConsoleEntry[];
 }

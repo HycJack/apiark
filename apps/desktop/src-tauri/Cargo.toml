@@ -37,6 +37,7 @@ chrono = "0.4"
 regex = "1"
 rand = "0.8"
 rusqlite = { version = "0.31", features = ["bundled"] }
+rquickjs = { version = "0.9", features = ["parallel", "loader"] }
 dirs = "5"
 
 [features]

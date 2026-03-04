@@ -4,13 +4,13 @@ import type {
   KeyValuePair,
   RequestBody,
   AuthConfig,
-
   HttpError,
   Tab,
   RequestFile,
 } from "@apiark/types";
 import {
   sendRequest,
+  sendRequestWithScripts,
   readRequestFile,
   saveRequestFile,
   loadPersistedState,
@@ -39,6 +39,10 @@ interface TabState {
   setParams: (params: KeyValuePair[]) => void;
   setBody: (body: RequestBody) => void;
   setAuth: (auth: AuthConfig) => void;
+  setPreRequestScript: (script: string | null) => void;
+  setPostResponseScript: (script: string | null) => void;
+  setTestScript: (script: string | null) => void;
+  setAssertions: (assertions: string | null) => void;
 
   // Actions
   send: () => Promise<void>;
@@ -70,9 +74,16 @@ function createEmptyTab(overrides?: Partial<Tab>): Tab {
     params: [emptyKvRow()],
     body: { type: "none", content: "", formData: [] },
     auth: { type: "none" },
+    preRequestScript: null,
+    postResponseScript: null,
+    testScript: null,
+    assertions: null,
     response: null,
     error: null,
     loading: false,
+    testResults: [],
+    assertionResults: [],
+    consoleOutput: [],
     ...overrides,
   };
 }
@@ -103,6 +114,32 @@ function requestFileToTab(
       }
     : { type: "none", content: "", formData: [] };
 
+  // Convert assert to YAML string for the editor
+  let assertionsStr: string | null = null;
+  if (file.assert) {
+    // The assert field comes from Rust as a serde_yaml::Value serialized to JSON.
+    // Convert it back to a simple YAML-like string for editing.
+    try {
+      if (typeof file.assert === "object" && file.assert !== null) {
+        assertionsStr = Object.entries(file.assert as Record<string, unknown>)
+          .map(([k, v]) => {
+            if (typeof v === "object" && v !== null) {
+              return `${k}:\n` + Object.entries(v as Record<string, unknown>)
+                .map(([ok, ov]) => `  ${ok}: ${JSON.stringify(ov)}`)
+                .join("\n");
+            }
+            return `${k}: ${JSON.stringify(v)}`;
+          })
+          .join("\n");
+      } else if (typeof file.assert === "string") {
+        assertionsStr = file.assert;
+      }
+    } catch {
+      // If conversion fails, just stringify
+      assertionsStr = JSON.stringify(file.assert);
+    }
+  }
+
   return {
     id: generateTabId(),
     name: file.name,
@@ -115,9 +152,16 @@ function requestFileToTab(
     params,
     body,
     auth: file.auth || { type: "none" },
+    preRequestScript: file.preRequestScript ?? null,
+    postResponseScript: file.postResponseScript ?? null,
+    testScript: file.tests ?? null,
+    assertions: assertionsStr,
     response: null,
     error: null,
     loading: false,
+    testResults: [],
+    assertionResults: [],
+    consoleOutput: [],
   };
 }
 
@@ -148,6 +192,9 @@ function tabToRequestFile(tab: Tab): RequestFile {
       tab.body.type !== "none"
         ? { type: tab.body.type, content: tab.body.content }
         : undefined,
+    preRequestScript: tab.preRequestScript || undefined,
+    postResponseScript: tab.postResponseScript || undefined,
+    tests: tab.testScript || undefined,
   };
 }
 
@@ -246,6 +293,10 @@ export const useTabStore = create<TabState>((set, get) => ({
   setParams: (params) => set((state) => updateActiveTab(state, () => ({ params }))),
   setBody: (body) => set((state) => updateActiveTab(state, () => ({ body }))),
   setAuth: (auth) => set((state) => updateActiveTab(state, () => ({ auth }))),
+  setPreRequestScript: (script) => set((state) => updateActiveTab(state, () => ({ preRequestScript: script }))),
+  setPostResponseScript: (script) => set((state) => updateActiveTab(state, () => ({ postResponseScript: script }))),
+  setTestScript: (script) => set((state) => updateActiveTab(state, () => ({ testScript: script }))),
+  setAssertions: (assertions) => set((state) => updateActiveTab(state, () => ({ assertions }))),
 
   send: async () => {
     const { tabs, activeTabId } = get();
@@ -256,7 +307,7 @@ export const useTabStore = create<TabState>((set, get) => ({
     set({
       tabs: tabs.map((t) =>
         t.id === activeTabId
-          ? { ...t, loading: true, error: null, response: null }
+          ? { ...t, loading: true, error: null, response: null, testResults: [], assertionResults: [], consoleOutput: [] }
           : t,
       ),
     });
@@ -275,29 +326,72 @@ export const useTabStore = create<TabState>((set, get) => ({
         }
       : undefined;
 
+    const requestParams = {
+      method: tab.method,
+      url: tab.url.trim(),
+      headers: tab.headers.filter((h) => h.key.trim() !== "" && h.enabled),
+      params: tab.params.filter((p) => p.key.trim() !== "" && p.enabled),
+      body: tab.body.type !== "none" ? tab.body : undefined,
+      auth: tab.auth.type !== "none" ? tab.auth : undefined,
+      proxy,
+      timeoutMs: settings.timeoutMs,
+      followRedirects: settings.followRedirects,
+      verifySsl: settings.verifySsl,
+    };
+
+    const hasScripts = tab.preRequestScript || tab.postResponseScript || tab.testScript || tab.assertions;
+
     try {
-      const response = await sendRequest(
-        {
-          method: tab.method,
-          url: tab.url.trim(),
-          headers: tab.headers.filter((h) => h.key.trim() !== "" && h.enabled),
-          params: tab.params.filter((p) => p.key.trim() !== "" && p.enabled),
-          body: tab.body.type !== "none" ? tab.body : undefined,
-          auth: tab.auth.type !== "none" ? tab.auth : undefined,
-          proxy,
-          timeoutMs: settings.timeoutMs,
-          followRedirects: settings.followRedirects,
-          verifySsl: settings.verifySsl,
-        },
-        variables,
-        tab.collectionPath ?? undefined,
-        tab.name !== "Untitled Request" ? tab.name : undefined,
-      );
-      set({
-        tabs: get().tabs.map((t) =>
-          t.id === activeTabId ? { ...t, response, loading: false } : t,
-        ),
-      });
+      if (hasScripts) {
+        const scriptedResponse = await sendRequestWithScripts(
+          requestParams,
+          variables,
+          tab.collectionPath ?? undefined,
+          tab.name !== "Untitled Request" ? tab.name : undefined,
+          tab.preRequestScript,
+          tab.postResponseScript,
+          tab.testScript,
+          tab.assertions,
+        );
+        // Apply env mutations to the environment store
+        if (scriptedResponse.envMutations && Object.keys(scriptedResponse.envMutations).length > 0) {
+          envStore.applyMutations(scriptedResponse.envMutations);
+        }
+        set({
+          tabs: get().tabs.map((t) =>
+            t.id === activeTabId
+              ? {
+                  ...t,
+                  response: {
+                    status: scriptedResponse.status,
+                    statusText: scriptedResponse.statusText,
+                    headers: scriptedResponse.headers,
+                    cookies: scriptedResponse.cookies,
+                    body: scriptedResponse.body,
+                    timeMs: scriptedResponse.timeMs,
+                    sizeBytes: scriptedResponse.sizeBytes,
+                  },
+                  testResults: scriptedResponse.testResults,
+                  assertionResults: scriptedResponse.assertionResults,
+                  consoleOutput: scriptedResponse.consoleOutput,
+                  loading: false,
+                }
+              : t,
+          ),
+        });
+      } else {
+        const response = await sendRequest(
+          requestParams,
+          variables,
+          tab.collectionPath ?? undefined,
+          tab.name !== "Untitled Request" ? tab.name : undefined,
+        );
+        set({
+          tabs: get().tabs.map((t) =>
+            t.id === activeTabId ? { ...t, response, loading: false } : t,
+          ),
+        });
+      }
     } catch (err) {
       set({
         tabs: get().tabs.map((t) =>

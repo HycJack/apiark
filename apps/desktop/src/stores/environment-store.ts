@@ -9,17 +9,21 @@ interface EnvironmentState {
   environments: EnvironmentData[];
   activeEnvironmentName: string | null;
   activeCollectionPath: string | null;
+  /** Runtime variable overrides from scripts (not persisted to disk) */
+  runtimeOverrides: Record<string, string>;
 
   loadEnvironments: (collectionPath: string) => Promise<void>;
   setActiveEnvironment: (name: string | null) => void;
   setActiveCollectionPath: (path: string | null) => void;
   getResolvedVariables: () => Promise<Record<string, string>>;
+  applyMutations: (mutations: Record<string, string | null>) => void;
 }
 
 export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
   environments: [],
   activeEnvironmentName: null,
   activeCollectionPath: null,
+  runtimeOverrides: {},
 
   loadEnvironments: async (collectionPath) => {
     try {
@@ -46,18 +50,33 @@ export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
   },
 
   getResolvedVariables: async () => {
-    const { activeCollectionPath, activeEnvironmentName } = get();
+    const { activeCollectionPath, activeEnvironmentName, runtimeOverrides } = get();
     if (!activeCollectionPath || !activeEnvironmentName) {
-      return {};
+      return { ...runtimeOverrides };
     }
     try {
-      return await getResolvedVariablesApi(
+      const resolved = await getResolvedVariablesApi(
         activeCollectionPath,
         activeEnvironmentName,
       );
+      return { ...resolved, ...runtimeOverrides };
     } catch (err) {
       console.error("Failed to resolve variables:", err);
-      return {};
+      return { ...runtimeOverrides };
     }
+  },
+
+  applyMutations: (mutations) => {
+    set((state) => {
+      const overrides = { ...state.runtimeOverrides };
+      for (const [key, value] of Object.entries(mutations)) {
+        if (value === null) {
+          delete overrides[key];
+        } else {
+          overrides[key] = value;
+        }
+      }
+      return { runtimeOverrides: overrides };
+    });
   },
 }));

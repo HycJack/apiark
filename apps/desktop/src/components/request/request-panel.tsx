@@ -3,13 +3,15 @@ import { useTabStore, useActiveTab } from "@/stores/tab-store";
 import { KeyValueEditor } from "./key-value-editor";
 import type { AuthConfig, BodyType } from "@apiark/types";
 
-type Tab = "params" | "headers" | "body" | "auth";
+type Tab = "params" | "headers" | "body" | "auth" | "scripts" | "tests";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "params", label: "Params" },
   { id: "headers", label: "Headers" },
   { id: "body", label: "Body" },
   { id: "auth", label: "Auth" },
+  { id: "scripts", label: "Scripts" },
+  { id: "tests", label: "Tests" },
 ];
 
 const BODY_TYPES: { value: BodyType; label: string }[] = [
@@ -24,7 +26,16 @@ const BODY_TYPES: { value: BodyType; label: string }[] = [
 export function RequestPanel() {
   const [activeTab, setActiveTab] = useState<Tab>("params");
   const tab = useActiveTab();
-  const { setParams, setHeaders, setBody, setAuth } = useTabStore();
+  const {
+    setParams,
+    setHeaders,
+    setBody,
+    setAuth,
+    setPreRequestScript,
+    setPostResponseScript,
+    setTestScript,
+    setAssertions,
+  } = useTabStore();
 
   if (!tab) return null;
 
@@ -54,6 +65,12 @@ export function RequestPanel() {
               <span className="ml-1 text-xs text-[var(--color-text-dimmed)]">
                 ({headers.filter((h) => h.key).length})
               </span>
+            )}
+            {t.id === "scripts" && (tab.preRequestScript || tab.postResponseScript) && (
+              <span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-blue-500" />
+            )}
+            {t.id === "tests" && (tab.testScript || tab.assertions) && (
+              <span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-blue-500" />
             )}
           </button>
         ))}
@@ -86,6 +103,120 @@ export function RequestPanel() {
         {activeTab === "auth" && (
           <AuthEditor auth={auth} onChange={setAuth} />
         )}
+
+        {activeTab === "scripts" && (
+          <ScriptsEditor
+            preRequestScript={tab.preRequestScript}
+            postResponseScript={tab.postResponseScript}
+            onPreRequestChange={setPreRequestScript}
+            onPostResponseChange={setPostResponseScript}
+          />
+        )}
+
+        {activeTab === "tests" && (
+          <TestsEditor
+            assertions={tab.assertions}
+            testScript={tab.testScript}
+            onAssertionsChange={setAssertions}
+            onTestScriptChange={setTestScript}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ScriptsEditor({
+  preRequestScript,
+  postResponseScript,
+  onPreRequestChange,
+  onPostResponseChange,
+}: {
+  preRequestScript: string | null;
+  postResponseScript: string | null;
+  onPreRequestChange: (script: string | null) => void;
+  onPostResponseChange: (script: string | null) => void;
+}) {
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-secondary)]">
+          Pre-request Script
+        </label>
+        <p className="mb-2 text-xs text-[var(--color-text-dimmed)]">
+          Runs before the request is sent. Use <code className="rounded bg-[var(--color-elevated)] px-1">ark.env.set()</code>, <code className="rounded bg-[var(--color-elevated)] px-1">ark.request.setHeader()</code>, etc.
+        </p>
+        <textarea
+          value={preRequestScript ?? ""}
+          onChange={(e) => onPreRequestChange(e.target.value || null)}
+          placeholder="// ark.env.set('token', 'abc123');"
+          className="h-32 w-full resize-y rounded bg-[var(--color-elevated)] p-3 font-mono text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-dimmed)] outline-none focus:ring-1 focus:ring-blue-500"
+          spellCheck={false}
+        />
+      </div>
+
+      <div>
+        <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-secondary)]">
+          Post-response Script
+        </label>
+        <p className="mb-2 text-xs text-[var(--color-text-dimmed)]">
+          Runs after the response is received. Access response via <code className="rounded bg-[var(--color-elevated)] px-1">ark.response.json()</code>, <code className="rounded bg-[var(--color-elevated)] px-1">ark.response.status</code>, etc.
+        </p>
+        <textarea
+          value={postResponseScript ?? ""}
+          onChange={(e) => onPostResponseChange(e.target.value || null)}
+          placeholder="// const body = ark.response.json();&#10;// ark.env.set('userId', body.id);"
+          className="h-32 w-full resize-y rounded bg-[var(--color-elevated)] p-3 font-mono text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-dimmed)] outline-none focus:ring-1 focus:ring-blue-500"
+          spellCheck={false}
+        />
+      </div>
+    </div>
+  );
+}
+
+function TestsEditor({
+  assertions,
+  testScript,
+  onAssertionsChange,
+  onTestScriptChange,
+}: {
+  assertions: string | null;
+  testScript: string | null;
+  onAssertionsChange: (assertions: string | null) => void;
+  onTestScriptChange: (script: string | null) => void;
+}) {
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-secondary)]">
+          Assertions (YAML)
+        </label>
+        <p className="mb-2 text-xs text-[var(--color-text-dimmed)]">
+          Declarative checks. E.g. <code className="rounded bg-[var(--color-elevated)] px-1">status: 200</code>, <code className="rounded bg-[var(--color-elevated)] px-1">{"body.id: { type: string }"}</code>
+        </p>
+        <textarea
+          value={assertions ?? ""}
+          onChange={(e) => onAssertionsChange(e.target.value || null)}
+          placeholder={"status: 200\nresponseTime:\n  lt: 2000\nbody.id:\n  type: number"}
+          className="h-28 w-full resize-y rounded bg-[var(--color-elevated)] p-3 font-mono text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-dimmed)] outline-none focus:ring-1 focus:ring-blue-500"
+          spellCheck={false}
+        />
+      </div>
+
+      <div>
+        <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-secondary)]">
+          Test Script (JavaScript)
+        </label>
+        <p className="mb-2 text-xs text-[var(--color-text-dimmed)]">
+          Write tests using <code className="rounded bg-[var(--color-elevated)] px-1">ark.test()</code> and <code className="rounded bg-[var(--color-elevated)] px-1">ark.expect()</code>.
+        </p>
+        <textarea
+          value={testScript ?? ""}
+          onChange={(e) => onTestScriptChange(e.target.value || null)}
+          placeholder={'ark.test("status is 200", function() {\n  ark.expect(ark.response.status).to.equal(200);\n});'}
+          className="h-32 w-full resize-y rounded bg-[var(--color-elevated)] p-3 font-mono text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-dimmed)] outline-none focus:ring-1 focus:ring-blue-500"
+          spellCheck={false}
+        />
       </div>
     </div>
   );
