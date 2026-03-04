@@ -1,0 +1,14 @@
+{
+  "identifier": "main-window",
+  "description": "Permissions for the main application window",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:window:default",
+    "core:window:allow-close",
+    "core:window:allow-set-size",
+    "dialog:default",
+    "shell:allow-open",
+    "notification:default"
+  ]
+}

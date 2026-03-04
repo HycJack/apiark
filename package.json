@@ -1,0 +1,17 @@
+{
+  "name": "apiark",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Local-first API development platform",
+  "scripts": {
+    "dev": "pnpm --filter @apiark/desktop dev",
+    "build": "pnpm --filter @apiark/desktop build",
+    "tauri": "pnpm --filter @apiark/desktop tauri",
+    "lint": "pnpm --filter @apiark/desktop lint",
+    "preview": "pnpm --filter @apiark/desktop preview"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=10.0.0"
+  }
+}
