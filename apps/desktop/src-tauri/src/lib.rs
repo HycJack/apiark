@@ -48,6 +48,7 @@ use scheduler::monitor::MonitorManager;
 use commands::state::{load_persisted_state, save_persisted_state};
 use commands::trash::{list_trash, restore_from_trash, empty_trash};
 use commands::watcher::{watch_collection, unwatch_collection};
+use commands::window::open_new_window;
 use oauth::OAuthTokenStore;
 use http::cookies::CookieJarManager;
 use watcher::collection_watcher::CollectionWatcher;
@@ -250,6 +251,8 @@ pub fn run() {
             get_license_status,
             activate_license,
             deactivate_license,
+            // Window commands
+            open_new_window,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -369,10 +369,10 @@ No tool currently delivers ALL of these simultaneously:
 - [x] `cargo audit` + `pnpm audit` in CI
 
 **Accessibility (§22):**
-- [ ] WCAG 2.1 Level AA compliance
-- [ ] Full keyboard navigation (tab order, arrow keys in tree, focus indicators)
-- [ ] Screen reader support (ARIA roles, live regions, method/status announcements)
-- [ ] `prefers-reduced-motion` and `prefers-contrast` support
+- [x] WCAG 2.1 Level AA compliance
+- [x] Full keyboard navigation (tab order, arrow keys in tree, focus indicators)
+- [x] Screen reader support (ARIA roles, live regions, method/status announcements)
+- [x] `prefers-reduced-motion` and `prefers-contrast` support
 - [ ] axe-core in CI for automated a11y audits
 
 **YAML Format Versioning (§21):**
@@ -392,7 +392,7 @@ No tool currently delivers ALL of these simultaneously:
 - [x] `react-i18next` with JSON locale files
 - [x] All UI strings via `t('key')` (English-only initially)
 - [ ] `Intl.DateTimeFormat` / `Intl.NumberFormat` for formatting
-- [ ] CSS logical properties for future RTL support
+- [x] CSS logical properties for future RTL support
 - [ ] Community translation via Weblate/Crowdin
 
 **Licensing & Feature Gating (§27):**
@@ -411,9 +411,9 @@ No tool currently delivers ALL of these simultaneously:
 - [x] Document manual sync approaches (symlink, dotfiles repo)
 
 **Multi-Window (§31):**
-- [ ] Tauri v2 multi-window API (`Ctrl+Shift+N`)
+- [x] Tauri v2 multi-window API (`Ctrl+Shift+N`)
 - [ ] Drag tab to detach into new window
-- [ ] Shared collection/environment state across windows via Tauri events
+- [x] Shared collection/environment state across windows via Tauri events
 - [ ] Window state persistence (positions, sizes, tabs per window)
 
 ### Phase 4 — AI & Ecosystem (Year 2)

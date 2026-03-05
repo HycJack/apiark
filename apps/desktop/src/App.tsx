@@ -105,6 +105,13 @@ function App() {
 
       switch (e.key.toLowerCase()) {
         case "n":
+          e.preventDefault();
+          if (e.shiftKey) {
+            import("@/lib/tauri-api").then((m) => m.openNewWindow().catch(() => {}));
+          } else {
+            newTab();
+          }
+          break;
         case "t":
           e.preventDefault();
           newTab();
@@ -188,6 +195,7 @@ function App() {
 
   return (
     <div className="flex h-screen flex-col bg-[var(--color-bg)] text-[var(--color-text-primary)]">
+      <a href="#main-content" className="sr-skip-link">Skip to content</a>
       {/* Crash report opt-in banner */}
       <CrashReportBanner />
 
@@ -225,7 +233,7 @@ function App() {
         />
 
         {/* Main Panel */}
-        <main className="flex flex-1 flex-col overflow-hidden">
+        <main id="main-content" className="flex flex-1 flex-col overflow-hidden" role="main">
           {/* Tab Bar */}
           <TabBar />
 

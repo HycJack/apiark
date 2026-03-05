@@ -20,6 +20,7 @@ pub mod state;
 pub mod trash;
 pub mod watcher;
 pub mod websocket;
+pub mod window;
 
 #[tauri::command]
 pub fn greet(name: &str) -> String {

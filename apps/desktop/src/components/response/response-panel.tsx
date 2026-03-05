@@ -129,8 +129,8 @@ export function ResponsePanel() {
   // Error state
   if (error) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
-        <AlertCircle className="h-10 w-10 text-red-500" />
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center" role="alert">
+        <AlertCircle className="h-10 w-10 text-red-500" aria-hidden="true" />
         <div>
           <p className="text-sm font-medium text-red-400">{error.message}</p>
           {error.suggestion && (
@@ -146,8 +146,8 @@ export function ResponsePanel() {
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       {/* Status bar */}
-      <div className="flex items-center gap-3 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2">
-        <span className={`text-sm font-semibold ${statusColor(response.status)}`}>
+      <div className="flex items-center gap-3 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2" role="status" aria-live="polite">
+        <span className={`text-sm font-semibold ${statusColor(response.status)}`} aria-label={`Response: ${response.status} ${response.statusText}, ${response.status < 300 ? "success" : response.status < 400 ? "redirect" : response.status < 500 ? "client error" : "server error"}`}>
           {response.status} {response.statusText}
         </span>
         <span className="text-xs text-[var(--color-text-muted)]">{response.timeMs}ms</span>

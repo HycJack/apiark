@@ -562,3 +562,9 @@ export async function activateLicense(key: string): Promise<LicenseStatus> {
 export async function deactivateLicense(): Promise<LicenseStatus> {
   return await invoke<LicenseStatus>("deactivate_license", {});
 }
+
+// ── Window ──
+
+export async function openNewWindow(): Promise<string> {
+  return await invoke<string>("open_new_window", {});
+}
