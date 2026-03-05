@@ -382,15 +382,15 @@ No tool currently delivers ALL of these simultaneously:
 - [x] Migration code in `storage/migration.rs`
 
 **Update Mechanism (§30):**
-- [ ] Tauri v2 updater plugin with signed manifests
-- [ ] Stable / Beta / Nightly update channels
-- [ ] Non-blocking update banner (never auto-install)
+- [x] Tauri v2 updater plugin with signed manifests
+- [x] Stable / Beta / Nightly update channels
+- [x] Non-blocking update banner (never auto-install)
 - [ ] Rollback system (keep last 3 binaries)
 - [ ] Code signing (macOS, Windows, Linux GPG)
 
 **Internationalization (§23):**
-- [ ] `react-i18next` with JSON locale files
-- [ ] All UI strings via `t('key')` (English-only initially)
+- [x] `react-i18next` with JSON locale files
+- [x] All UI strings via `t('key')` (English-only initially)
 - [ ] `Intl.DateTimeFormat` / `Intl.NumberFormat` for formatting
 - [ ] CSS logical properties for future RTL support
 - [ ] Community translation via Weblate/Crowdin

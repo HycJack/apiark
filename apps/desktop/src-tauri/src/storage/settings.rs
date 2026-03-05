@@ -37,6 +37,9 @@ pub struct AppSettings {
     /// Passphrase for PFX/PKCS12 client certificates
     #[serde(default)]
     pub client_cert_passphrase: Option<String>,
+    /// Update channel: "stable", "beta", or "nightly"
+    #[serde(default = "default_update_channel")]
+    pub update_channel: String,
 }
 
 fn default_theme() -> String {
@@ -53,6 +56,10 @@ fn default_timeout() -> u64 {
 
 fn default_sidebar_width() -> u32 {
     256
+}
+
+fn default_update_channel() -> String {
+    "stable".to_string()
 }
 
 impl Default for AppSettings {
@@ -72,6 +79,7 @@ impl Default for AppSettings {
             client_cert_path: None,
             client_key_path: None,
             client_cert_passphrase: None,
+            update_channel: default_update_channel(),
         }
     }
 }

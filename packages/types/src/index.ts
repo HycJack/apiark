@@ -297,6 +297,7 @@ export interface AppSettings {
   clientCertPath: string | null;
   clientKeyPath: string | null;
   clientCertPassphrase: string | null;
+  updateChannel: "stable" | "beta" | "nightly";
 }
 
 // ── Tab Protocol ──

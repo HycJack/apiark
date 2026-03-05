@@ -1,0 +1,297 @@
+{
+  "app": {
+    "name": "ApiArk"
+  },
+  "sidebar": {
+    "collections": "Collections",
+    "history": "History",
+    "environments": "Environments",
+    "search": "Search collections...",
+    "noCollections": "Open a folder or import a collection to get started",
+    "openFolder": "Open Folder",
+    "importCollection": "Import Collection",
+    "newRequest": "New Request",
+    "newFolder": "New Folder",
+    "cookieSettings": "Cookie Settings",
+    "rename": "Rename",
+    "duplicate": "Duplicate",
+    "delete": "Delete",
+    "noResults": "No matching requests"
+  },
+  "tabs": {
+    "untitled": "Untitled Request",
+    "close": "Close",
+    "closeOthers": "Close Others",
+    "closeAll": "Close All",
+    "noTabs": "Open a request from the sidebar, or press {{shortcut}} to create one"
+  },
+  "request": {
+    "send": "Send",
+    "sending": "Sending...",
+    "cancel": "Cancel",
+    "urlPlaceholder": "Enter URL or paste cURL",
+    "params": "Params",
+    "headers": "Headers",
+    "body": "Body",
+    "auth": "Auth",
+    "scripts": "Scripts",
+    "preRequest": "Pre-request",
+    "postResponse": "Post-response",
+    "tests": "Tests",
+    "assertions": "Assertions",
+    "key": "Key",
+    "value": "Value",
+    "description": "Description",
+    "enabled": "Enabled",
+    "addRow": "Add",
+    "bulkEdit": "Bulk Edit",
+    "pathVariables": "Path Variables"
+  },
+  "body": {
+    "json": "JSON",
+    "xml": "XML",
+    "formData": "Form Data",
+    "urlencoded": "URL Encoded",
+    "raw": "Raw",
+    "binary": "Binary",
+    "none": "None"
+  },
+  "auth": {
+    "type": "Auth Type",
+    "none": "No Auth",
+    "bearer": "Bearer Token",
+    "basic": "Basic Auth",
+    "apiKey": "API Key",
+    "oauth2": "OAuth 2.0",
+    "digest": "Digest Auth",
+    "awsV4": "AWS Signature v4",
+    "ntlm": "NTLM",
+    "jwtBearer": "JWT Bearer",
+    "token": "Token",
+    "username": "Username",
+    "password": "Password",
+    "inherited": "Inherited from {{source}}"
+  },
+  "response": {
+    "body": "Body",
+    "headers": "Headers",
+    "cookies": "Cookies",
+    "tests": "Tests",
+    "timing": "Timing",
+    "pretty": "Pretty",
+    "raw": "Raw",
+    "preview": "Preview",
+    "noResponse": "Send a request to see the response",
+    "copyResponse": "Copy Response",
+    "saveToFile": "Save to File",
+    "loadFullResponse": "Load Full Response",
+    "truncated": "Response truncated ({{size}}). Showing first 1MB.",
+    "status": {
+      "success": "Success",
+      "redirect": "Redirect",
+      "clientError": "Client Error",
+      "serverError": "Server Error"
+    }
+  },
+  "environment": {
+    "title": "Environments",
+    "noEnvironment": "No Environment",
+    "create": "Create Environment",
+    "edit": "Edit Environment",
+    "name": "Name",
+    "variables": "Variables",
+    "secrets": "Secrets",
+    "noEnvironments": "Create an environment to manage variables across requests",
+    "variableHint": "Use {{syntax}} for dynamic values"
+  },
+  "history": {
+    "title": "History",
+    "search": "Search history...",
+    "clear": "Clear History",
+    "clearConfirm": "Are you sure you want to clear all history?",
+    "noHistory": "Send your first request to see it here",
+    "restore": "Restore"
+  },
+  "settings": {
+    "title": "Settings",
+    "general": "General",
+    "theme": "Theme",
+    "dark": "Dark",
+    "light": "Light",
+    "system": "System",
+    "sidebarWidth": "Sidebar Width",
+    "network": "Network",
+    "sslVerification": "SSL Certificate Verification",
+    "followRedirects": "Follow Redirects",
+    "timeout": "Request Timeout (ms)",
+    "proxyUrl": "Proxy URL",
+    "proxyUsername": "Username (optional)",
+    "proxyPassword": "Password (optional)",
+    "certificates": "Certificates",
+    "caCert": "Custom CA Certificate (PEM)",
+    "clientCert": "Client Certificate (PEM)",
+    "clientKey": "Client Key (PEM)",
+    "pfxPassphrase": "PFX Passphrase",
+    "backup": "Backup",
+    "includeHistory": "Include history in export",
+    "exportState": "Export App State",
+    "importState": "Import App State",
+    "exporting": "Exporting...",
+    "importing": "Importing...",
+    "updates": "Updates",
+    "updateChannel": "Update Channel",
+    "stable": "Stable",
+    "beta": "Beta",
+    "nightly": "Nightly",
+    "checkForUpdates": "Check for Updates",
+    "upToDate": "You're up to date",
+    "updateAvailable": "Update available: {{version}}"
+  },
+  "runner": {
+    "title": "Collection Runner",
+    "run": "Run",
+    "stop": "Stop",
+    "iterations": "Iterations",
+    "delay": "Delay (ms)",
+    "dataFile": "Data File",
+    "results": "Results",
+    "passed": "Passed",
+    "failed": "Failed",
+    "skipped": "Skipped",
+    "duration": "Duration"
+  },
+  "import": {
+    "title": "Import Collection",
+    "selectFile": "Select File",
+    "format": "Format",
+    "autoDetect": "Auto-detect",
+    "preview": "Preview",
+    "importing": "Importing...",
+    "success": "Import successful",
+    "requestCount": "{{count}} requests",
+    "folderCount": "{{count}} folders",
+    "warnings": "{{count}} warnings"
+  },
+  "export": {
+    "title": "Export Collection",
+    "format": "Format",
+    "postman": "Postman v2.1",
+    "openapi": "OpenAPI 3.0",
+    "apiark": "ApiArk YAML"
+  },
+  "commandPalette": {
+    "placeholder": "Type a command...",
+    "noResults": "No matching commands"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "rename": "Rename",
+    "create": "Create",
+    "edit": "Edit",
+    "copy": "Copy",
+    "paste": "Paste",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "warning": "Warning",
+    "retry": "Retry",
+    "browse": "Browse..."
+  },
+  "errors": {
+    "connectionRefused": "Connection refused — is the server running?",
+    "timeout": "Request timed out",
+    "dnsFailure": "DNS resolution failed — check the URL",
+    "tlsError": "TLS/SSL error — check certificate settings",
+    "networkError": "Network error",
+    "autoSaveFailed": "Auto-save failed: {{reason}}",
+    "fileDeleted": "This file was deleted",
+    "fileChanged": "This file was changed externally",
+    "mergeConflict": "This file has merge conflicts. Please resolve them in your editor or Git tool."
+  },
+  "onboarding": {
+    "welcome": "Welcome to ApiArk",
+    "tagline": "Local-first API development. No accounts. No cloud. Full power.",
+    "startScratch": "Start from scratch",
+    "importExisting": "Import existing collection",
+    "openFolder": "Open a folder",
+    "chooseTheme": "Choose your theme"
+  },
+  "console": {
+    "title": "Console",
+    "clear": "Clear",
+    "filter": "Filter",
+    "all": "All",
+    "noLogs": "No console output yet"
+  },
+  "grpc": {
+    "title": "gRPC",
+    "loadProto": "Load .proto",
+    "service": "Service",
+    "method": "Method",
+    "invoke": "Invoke",
+    "metadata": "Metadata",
+    "requestBody": "Request",
+    "responseBody": "Response"
+  },
+  "mock": {
+    "title": "Mock Servers",
+    "start": "Start Server",
+    "stop": "Stop",
+    "port": "Port",
+    "running": "Running",
+    "stopped": "Stopped"
+  },
+  "monitor": {
+    "title": "Monitors",
+    "create": "Create Monitor",
+    "schedule": "Schedule",
+    "lastRun": "Last Run",
+    "nextRun": "Next Run",
+    "enabled": "Enabled",
+    "disabled": "Disabled"
+  },
+  "docs": {
+    "title": "API Documentation",
+    "generate": "Generate",
+    "preview": "Preview",
+    "html": "HTML",
+    "markdown": "Markdown"
+  },
+  "diff": {
+    "title": "Response Diff",
+    "snapshot": "Snapshot",
+    "compare": "Compare"
+  },
+  "trash": {
+    "title": "Trash",
+    "restore": "Restore",
+    "emptyTrash": "Empty Trash",
+    "deletedAt": "Deleted {{date}}"
+  },
+  "migration": {
+    "title": "Collection Format Update",
+    "message": "This collection uses format v{{old}}. The current version is v{{new}}.",
+    "upgrade": "Upgrade",
+    "readOnly": "Open Read-Only",
+    "upgradeHint": "Upgrading will rewrite collection files. Commit your changes first."
+  },
+  "websocket": {
+    "connect": "Connect",
+    "disconnect": "Disconnect",
+    "send": "Send",
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "messages": "Messages"
+  },
+  "sse": {
+    "connect": "Connect",
+    "disconnect": "Disconnect",
+    "events": "Events",
+    "connected": "Connected",
+    "disconnected": "Disconnected"
+  }
+}

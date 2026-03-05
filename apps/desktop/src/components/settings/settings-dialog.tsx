@@ -1,6 +1,6 @@
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { X, Sun, Moon, Monitor, FolderOpen, Download, Upload } from "lucide-react";
+import { X, Sun, Moon, Monitor, FolderOpen, Download, Upload, RefreshCw } from "lucide-react";
 import { useSettingsStore } from "@/stores/settings-store";
 import type { AppSettings } from "@apiark/types";
 import { open as openFileDialog, save as saveFileDialog } from "@tauri-apps/plugin-dialog";
@@ -222,12 +222,87 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
               )}
             </section>
 
+            {/* Updates Section */}
+            <UpdateSection settings={settings} update={update} />
+
             {/* Backup Section */}
             <BackupSection />
           </div>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
+  );
+}
+
+function UpdateSection({
+  settings,
+  update,
+}: {
+  settings: AppSettings;
+  update: (patch: Partial<AppSettings>) => void;
+}) {
+  const [checking, setChecking] = useState(false);
+  const [updateStatus, setUpdateStatus] = useState<string | null>(null);
+
+  const checkForUpdates = async () => {
+    setChecking(true);
+    setUpdateStatus(null);
+    try {
+      const { check } = await import("@tauri-apps/plugin-updater");
+      const result = await check();
+      if (result) {
+        setUpdateStatus(`Update available: v${result.version}`);
+      } else {
+        setUpdateStatus("You're up to date");
+      }
+    } catch (e) {
+      setUpdateStatus(`Check failed: ${e}`);
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  return (
+    <section>
+      <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+        Updates
+      </h3>
+
+      <div className="mb-4">
+        <label className="mb-2 block text-sm text-[var(--color-text-secondary)]">
+          Update Channel
+        </label>
+        <div className="flex gap-2">
+          {(["stable", "beta", "nightly"] as const).map((channel) => (
+            <button
+              key={channel}
+              onClick={() => update({ updateChannel: channel })}
+              className={`rounded px-4 py-2 text-sm capitalize transition-colors ${
+                settings.updateChannel === channel
+                  ? "bg-[var(--color-accent)] text-white"
+                  : "bg-[var(--color-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+              }`}
+            >
+              {channel}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <button
+          onClick={checkForUpdates}
+          disabled={checking}
+          className="flex items-center gap-1.5 rounded bg-[var(--color-elevated)] px-3 py-1.5 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-border)] hover:text-[var(--color-text-primary)] disabled:opacity-50"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${checking ? "animate-spin" : ""}`} />
+          {checking ? "Checking..." : "Check for Updates"}
+        </button>
+        {updateStatus && (
+          <span className="text-xs text-[var(--color-text-muted)]">{updateStatus}</span>
+        )}
+      </div>
+    </section>
   );
 }
 

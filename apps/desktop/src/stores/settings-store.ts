@@ -24,6 +24,7 @@ const defaultSettings: AppSettings = {
   clientCertPath: null,
   clientKeyPath: null,
   clientCertPassphrase: null,
+  updateChannel: "stable",
 };
 
 export const useSettingsStore = create<SettingsState>((set) => ({
