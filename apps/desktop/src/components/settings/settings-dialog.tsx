@@ -11,6 +11,7 @@ import {
 import type { AppSettings } from "@apiark/types";
 import { open as openFileDialog, save as saveFileDialog } from "@tauri-apps/plugin-dialog";
 import { exportAppState, importAppState } from "@/lib/tauri-api";
+import { tokenSwatchGroups } from "@/styles/tokens";
 
 interface SettingsDialogProps {
   open: boolean;
@@ -340,6 +341,9 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
 
             {/* Backup Section */}
             <BackupSection />
+
+            {/* Design Tokens Reference */}
+            <DesignTokensSection />
           </div>
         </Dialog.Content>
       </Dialog.Portal>
@@ -603,6 +607,45 @@ function ToggleSwitch({
         }`}
       />
     </button>
+  );
+}
+
+function DesignTokensSection() {
+  return (
+    <section>
+      <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+        Design Tokens
+      </h3>
+      <p className="mb-3 text-xs text-[var(--color-text-dimmed)]">
+        Active color palette for the current theme. Useful for theme creators and plugin developers.
+      </p>
+      <div className="space-y-3">
+        {tokenSwatchGroups.map((group) => (
+          <div key={group.label}>
+            <span className="mb-1.5 block text-[10px] font-medium uppercase tracking-wider text-[var(--color-text-dimmed)]">
+              {group.label}
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {group.swatches.map((swatch) => (
+                <div
+                  key={swatch.name}
+                  className="flex flex-col items-center gap-0.5"
+                  title={swatch.value}
+                >
+                  <div
+                    className="h-6 w-6 rounded-full border border-[var(--color-border)]"
+                    style={{ backgroundColor: swatch.value }}
+                  />
+                  <span className="text-[9px] leading-tight text-[var(--color-text-dimmed)]">
+                    {swatch.name}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
