@@ -356,12 +356,33 @@ function ProtocolView({
   urlBarRef: React.RefObject<HTMLInputElement | null>;
 }) {
   const { isCompact } = useResponsive();
-  const panelRatio = useSettingsStore((s) => s.settings.panelRatio);
+  const savedRatio = useSettingsStore((s) => s.settings.panelRatio);
   const layout = useSettingsStore((s) => s.settings.layout);
   const { updateSettings } = useSettingsStore();
   const containerRef = useRef<HTMLDivElement>(null);
+  // Local state for smooth dragging — only persists to settings on mouse up
+  const [localRatio, setLocalRatio] = useState(savedRatio);
+
+  // Sync local state when settings change externally (e.g. from settings dialog)
+  const prevSaved = useRef(savedRatio);
+  if (prevSaved.current !== savedRatio) {
+    prevSaved.current = savedRatio;
+    setLocalRatio(savedRatio);
+  }
 
   const isVertical = isCompact || layout === "vertical";
+
+  const handleResizeEnd = useCallback(
+    (ratio: number) => {
+      updateSettings({ panelRatio: Math.round(ratio * 100) / 100 });
+    },
+    [updateSettings],
+  );
+
+  const handleDoubleClick = useCallback(() => {
+    setLocalRatio(0.5);
+    updateSettings({ panelRatio: 0.5 });
+  }, [updateSettings]);
 
   switch (protocol) {
     case "graphql":
@@ -385,8 +406,8 @@ function ProtocolView({
               data-tour="request-panel"
               className="flex flex-col overflow-hidden"
               style={isVertical
-                ? { height: `${panelRatio * 100}%` }
-                : { width: `${panelRatio * 100}%` }
+                ? { height: `${localRatio * 100}%` }
+                : { width: `${localRatio * 100}%` }
               }
             >
               <RequestPanel />
@@ -394,8 +415,9 @@ function ProtocolView({
             <PanelDivider
               direction={isVertical ? "vertical" : "horizontal"}
               containerRef={containerRef}
-              onResize={(ratio) => updateSettings({ panelRatio: Math.round(ratio * 100) / 100 })}
-              onDoubleClick={() => updateSettings({ panelRatio: 0.5 })}
+              onResize={setLocalRatio}
+              onResizeEnd={handleResizeEnd}
+              onDoubleClick={handleDoubleClick}
             />
             <div
               data-tour="response-panel"

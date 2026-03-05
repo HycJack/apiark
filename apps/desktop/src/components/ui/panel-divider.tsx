@@ -3,12 +3,14 @@ import { useCallback, useRef } from "react";
 interface PanelDividerProps {
   direction: "horizontal" | "vertical";
   onResize: (ratio: number) => void;
+  onResizeEnd: (ratio: number) => void;
   onDoubleClick: () => void;
   containerRef: React.RefObject<HTMLDivElement | null>;
 }
 
-export function PanelDivider({ direction, onResize, onDoubleClick, containerRef }: PanelDividerProps) {
+export function PanelDivider({ direction, onResize, onResizeEnd, onDoubleClick, containerRef }: PanelDividerProps) {
   const dragging = useRef(false);
+  const lastRatio = useRef(0.5);
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -18,17 +20,18 @@ export function PanelDivider({ direction, onResize, onDoubleClick, containerRef 
       const container = containerRef.current;
       if (!container) return;
 
+      const rect = container.getBoundingClientRect();
+
       const onMouseMove = (ev: MouseEvent) => {
         if (!dragging.current) return;
-        const rect = container.getBoundingClientRect();
         let ratio: number;
         if (direction === "horizontal") {
           ratio = (ev.clientX - rect.left) / rect.width;
         } else {
           ratio = (ev.clientY - rect.top) / rect.height;
         }
-        // Clamp between 0.2 and 0.8 (min 20% for each panel)
         ratio = Math.min(0.8, Math.max(0.2, ratio));
+        lastRatio.current = ratio;
         onResize(ratio);
       };
 
@@ -38,6 +41,7 @@ export function PanelDivider({ direction, onResize, onDoubleClick, containerRef 
         document.removeEventListener("mouseup", onMouseUp);
         document.body.style.cursor = "";
         document.body.style.userSelect = "";
+        onResizeEnd(lastRatio.current);
       };
 
       document.body.style.cursor = direction === "horizontal" ? "col-resize" : "row-resize";
@@ -45,7 +49,7 @@ export function PanelDivider({ direction, onResize, onDoubleClick, containerRef 
       document.addEventListener("mousemove", onMouseMove);
       document.addEventListener("mouseup", onMouseUp);
     },
-    [direction, onResize, containerRef],
+    [direction, onResize, onResizeEnd, containerRef],
   );
 
   const isHorizontal = direction === "horizontal";
