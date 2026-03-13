@@ -136,6 +136,52 @@ jobs:
           args: --target ${{ matrix.target }}
           updaterJsonPreferNsis: true
 
+      - name: Upload updater signatures
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const target = '${{ matrix.target }}';
+            const bundleDir = `apps/desktop/src-tauri/target/${target}/release/bundle`;
+
+            // Find all .sig and .tar.gz files recursively
+            function findFiles(dir, pattern) {
+              const results = [];
+              if (!fs.existsSync(dir)) return results;
+              for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+                const full = path.join(dir, entry.name);
+                if (entry.isDirectory()) results.push(...findFiles(full, pattern));
+                else if (pattern.test(entry.name)) results.push(full);
+              }
+              return results;
+            }
+
+            // Upload .tar.gz updater bundles and their .sig files
+            const files = findFiles(bundleDir, /\.(sig|tar\.gz)$/);
+            for (const file of files) {
+              const name = path.basename(file);
+              // Skip duplicates with different casing (api-ark vs ApiArk)
+              if (name.startsWith('api-ark')) continue;
+              console.log(`Uploading: ${name}`);
+              try {
+                await github.rest.repos.uploadReleaseAsset({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  release_id: ${{ needs.create-release.outputs.release_id }},
+                  name: name,
+                  data: fs.readFileSync(file),
+                });
+              } catch (e) {
+                // Asset may already exist if tauri-action uploaded it
+                if (e.status === 422) console.log(`  Already exists, skipping`);
+                else throw e;
+              }
+            }
+
   # ── Build CLI (per-platform) ──────────────────────────────────────────
   build-cli:
     needs: create-release
@@ -211,15 +257,108 @@ jobs:
     if: always() && needs.create-release.result == 'success'
     runs-on: ubuntu-latest
     steps:
-      - name: Publish release (undraft)
+      - name: Generate updater latest.json and publish
         uses: actions/github-script@v7
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           script: |
+            const releaseId = ${{ needs.create-release.outputs.release_id }};
+            const tag = '${{ needs.create-release.outputs.tag }}';
+            const version = tag.replace(/^v/, '');
+
+            // Get all release assets
+            const { data: assets } = await github.rest.repos.listReleaseAssets({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: releaseId,
+              per_page: 100,
+            });
+
+            const assetMap = {};
+            for (const a of assets) {
+              assetMap[a.name] = a.browser_download_url;
+            }
+
+            // Helper to find sig content from asset URL
+            async function getSigContent(sigName) {
+              const asset = assets.find(a => a.name === sigName);
+              if (!asset) return null;
+              const { data } = await github.request('GET ' + asset.url, {
+                headers: { Accept: 'application/octet-stream' }
+              });
+              return Buffer.from(data).toString('utf-8').trim();
+            }
+
+            const platforms = {};
+
+            // Linux - AppImage.tar.gz
+            const linuxTarGz = assets.find(a => a.name.endsWith('.AppImage.tar.gz'));
+            const linuxSig = linuxTarGz ? await getSigContent(linuxTarGz.name + '.sig') : null;
+            if (linuxTarGz && linuxSig) {
+              platforms['linux-x86_64'] = {
+                signature: linuxSig,
+                url: linuxTarGz.browser_download_url,
+              };
+            }
+
+            // macOS - app.tar.gz
+            const macArmTarGz = assets.find(a => a.name.includes('aarch64') && a.name.endsWith('.app.tar.gz'));
+            const macArmSig = macArmTarGz ? await getSigContent(macArmTarGz.name + '.sig') : null;
+            if (macArmTarGz && macArmSig) {
+              platforms['darwin-aarch64'] = {
+                signature: macArmSig,
+                url: macArmTarGz.browser_download_url,
+              };
+            }
+
+            const macX64TarGz = assets.find(a => a.name.includes('x64') && a.name.endsWith('.app.tar.gz'));
+            const macX64Sig = macX64TarGz ? await getSigContent(macX64TarGz.name + '.sig') : null;
+            if (macX64TarGz && macX64Sig) {
+              platforms['darwin-x86_64'] = {
+                signature: macX64Sig,
+                url: macX64TarGz.browser_download_url,
+              };
+            }
+
+            // Windows - NSIS setup.exe
+            const winSetup = assets.find(a => a.name.endsWith('-setup.exe'));
+            const winSig = winSetup ? await getSigContent(winSetup.name + '.sig') : null;
+            if (winSetup && winSig) {
+              platforms['windows-x86_64'] = {
+                signature: winSig,
+                url: winSetup.browser_download_url,
+              };
+            }
+
+            const latestJson = {
+              version: `v${version}`,
+              notes: `ApiArk v${version}`,
+              pub_date: new Date().toISOString(),
+              platforms,
+            };
+
+            console.log('latest.json platforms:', Object.keys(platforms));
+            console.log('latest.json:', JSON.stringify(latestJson, null, 2));
+
+            if (Object.keys(platforms).length === 0) {
+              console.log('WARNING: No platforms found with signatures. Skipping latest.json upload.');
+            } else {
+              // Upload latest.json
+              await github.rest.repos.uploadReleaseAsset({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: releaseId,
+                name: 'latest.json',
+                data: JSON.stringify(latestJson, null, 2),
+              });
+              console.log('latest.json uploaded successfully');
+            }
+
+            // Undraft the release
             await github.rest.repos.updateRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              release_id: ${{ needs.create-release.outputs.release_id }},
+              release_id: releaseId,
               draft: false,
             });
