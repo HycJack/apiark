@@ -35,7 +35,7 @@ import { BottomPanel } from "@/components/layout/bottom-panel";
 import { useCollectionStore } from "@/stores/collection-store";
 import { AiAssistantDialog } from "@/components/ai/ai-assistant-dialog";
 import { useShortcutsStore } from "@/stores/shortcuts-store";
-import { AlertCircle, X, RefreshCw, FileX, GitMerge, Shield, ArrowRightLeft } from "lucide-react";
+import { AlertCircle, X, RefreshCw, FileX, GitMerge, Shield, ArrowRightLeft, Download } from "lucide-react";
 import { ToastContainer } from "@/components/ui/toast-container";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useResponsive } from "@/hooks/use-responsive";
@@ -237,6 +237,9 @@ function App() {
   return (
     <div className="flex h-screen flex-col bg-[var(--color-bg)] text-[var(--color-text-primary)]">
       <a href="#main-content" className="sr-skip-link">Skip to content</a>
+      {/* Update available banner */}
+      <UpdateBanner />
+
       {/* Crash report opt-in banner */}
       <CrashReportBanner />
 
@@ -541,6 +544,98 @@ function EmptyState() {
         </kbd>{" "}
         command palette
       </p>
+    </div>
+  );
+}
+
+function UpdateBanner() {
+  const [update, setUpdate] = useState<{ version: string; install: () => Promise<void> } | null>(null);
+  const [dismissed, setDismissed] = useState(false);
+  const [installing, setInstalling] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const checkUpdate = async () => {
+      try {
+        const { check } = await import("@tauri-apps/plugin-updater");
+        const result = await check();
+        if (result && !cancelled) {
+          setUpdate({
+            version: result.version,
+            install: async () => {
+              setInstalling(true);
+              setStatus("Backing up current version...");
+              try {
+                const { backupCurrentBinary } = await import("@/lib/tauri-api");
+                await backupCurrentBinary().catch(() => {});
+              } catch { /* ignore */ }
+              setStatus("Downloading update...");
+              await result.downloadAndInstall((progress) => {
+                if (progress.event === "Started" && progress.data.contentLength) {
+                  setStatus(`Downloading... (${(progress.data.contentLength / 1024 / 1024).toFixed(1)} MB)`);
+                } else if (progress.event === "Finished") {
+                  setStatus("Download complete. Restart to apply.");
+                }
+              });
+              setStatus("Update installed! Restart the app to apply.");
+            },
+          });
+        }
+      } catch {
+        // Silently fail — don't bother the user if update check fails
+      }
+    };
+
+    // Check on launch after a short delay to not block startup
+    const timer = setTimeout(checkUpdate, 5000);
+
+    // Check every 6 hours
+    const interval = setInterval(checkUpdate, 6 * 60 * 60 * 1000);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+      clearInterval(interval);
+    };
+  }, []);
+
+  if (!update || dismissed) return null;
+
+  return (
+    <div className="flex items-center gap-2 bg-[var(--color-accent)]/10 px-4 py-2 text-sm text-[var(--color-accent)]">
+      <Download className="h-4 w-4 shrink-0" />
+      <span className="flex-1">
+        {status ?? `ApiArk v${update.version} is available.`}
+      </span>
+      {!installing && !status?.includes("Restart") && (
+        <button
+          onClick={async () => {
+            try {
+              await update.install();
+            } catch (e) {
+              setStatus(`Update failed: ${e}`);
+              setInstalling(false);
+            }
+          }}
+          className="rounded-md bg-[var(--color-accent)]/20 px-3 py-0.5 text-xs font-medium hover:bg-[var(--color-accent)]/30"
+        >
+          Update Now
+        </button>
+      )}
+      {status?.includes("Restart") && (
+        <span className="text-xs font-medium text-[var(--color-accent)]">
+          Please restart the app to apply the update.
+        </span>
+      )}
+      {!installing && (
+        <button
+          onClick={() => setDismissed(true)}
+          className="rounded p-0.5 hover:bg-[var(--color-accent)]/20"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      )}
     </div>
   );
 }

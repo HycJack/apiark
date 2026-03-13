@@ -34,7 +34,7 @@
       "endpoints": [
         "https://github.com/berbicanes/apiark/releases/latest/download/latest.json"
       ],
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEMxMURCQzg3Q0RBMTU3OEUKUldTT1Y2SE5oN3dkd1dnSHRVMWNqV0d6VWJiU0tkU3VVaFZpNGowdHFOUkRmL2s3b1Uxd2FTcWoK"
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDZCMTc1OEYxNzFBMUI3NwpSV1IzR3hvWGozV3hCcVhVd2ZLV3ZsSlhsRUgzSXgwRDJab1JlQ0R4WWNXaWNPUnRUSU5yY1dEcQo="
     }
   },
   "bundle": {
