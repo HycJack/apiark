@@ -669,16 +669,10 @@ function UpdateBanner() {
               )}
               {isFinished && (
                 <button
-                  onClick={async () => {
-                    try {
-                      const { relaunch } = await import("@tauri-apps/plugin-shell");
-                      await relaunch();
-                    } catch { /* fallback */ }
-                  }}
+                  onClick={() => setDismissed(true)}
                   className="rounded-lg bg-[var(--color-success)] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
                 >
-                  <RefreshCw className="mr-1.5 inline h-3.5 w-3.5" />
-                  Restart Now
+                  OK
                 </button>
               )}
             </div>
