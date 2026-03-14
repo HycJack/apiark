@@ -1,6 +1,6 @@
 [package]
 name = "apiark"
-version = "0.2.18"
+version = "0.2.19"
 description = "Local-first API development platform"
 authors = ["ApiArk Contributors"]
 edition = "2021"
@@ -74,5 +74,29 @@ rcgen = "0.13"
 time = "0.3"
 portable-pty = "0.8"
 
+[dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
+tempfile = "3"
+
 [features]
 custom-protocol = ["tauri/custom-protocol"]
+
+[[bench]]
+name = "interpolation"
+harness = false
+
+[[bench]]
+name = "collection_loading"
+harness = false
+
+[[bench]]
+name = "curl_parsing"
+harness = false
+
+[[bench]]
+name = "scripting"
+harness = false
+
+[[bench]]
+name = "assertions"
+harness = false
