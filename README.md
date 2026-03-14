@@ -260,8 +260,8 @@ apiark import postman-export.json
 
 ## Community
 
-- [Discord](https://discord.gg/apiark) — Chat, ask questions, share feedback
-- [Twitter / X](https://x.com/apiabordes) — Updates and announcements
+- [Discord](https://discord.gg/apiark) — COMING SOON
+- [Twitter / X](https://x.com/apiabordes) — COMING SOON
 - [GitHub Discussions](https://github.com/berbicanes/apiark/discussions) — Ideas, Q&A, show & tell
 - [GitHub Issues](https://github.com/berbicanes/apiark/issues) — Bug reports and feature requests
 
