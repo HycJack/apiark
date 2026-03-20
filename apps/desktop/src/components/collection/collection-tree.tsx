@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { getCollectionDefaults, updateCollectionDefaults } from "@/lib/tauri-api";
 import * as Dialog from "@radix-ui/react-dialog";
+import { CookieJarDialog } from "@/components/collection/cookie-jar-dialog";
 import { exportCollectionToFile } from "@/lib/export-collection";
 import { saveFolderOrder } from "@/lib/tauri-api";
 import {
@@ -366,6 +367,7 @@ function TreeNodeRow({
   const [renaming, setRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState("");
   const [cookieSettingsPath, setCookieSettingsPath] = useState<string | null>(null);
+  const [cookieJarPath, setCookieJarPath] = useState<string | null>(null);
   const [newRequestDialog, setNewRequestDialog] = useState(false);
   const [newFolderDialog, setNewFolderDialog] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
@@ -478,26 +480,7 @@ function TreeNodeRow({
 
   const confirmDeleteCollection = async () => {
     try {
-      // Close tabs belonging to this collection first to avoid file watcher conflicts
-      const { useTabStore } = await import("@/stores/tab-store");
-      const tabStore = useTabStore.getState();
-      const tabsToClose = tabStore.tabs.filter((t) => t.collectionPath === collectionPath);
-      for (const tab of tabsToClose) {
-        tabStore.closeTab(tab.id);
-      }
-      // Close collection from sidebar (stops file watcher)
-      useCollectionStore.getState().closeCollection(collectionPath);
-      // Now delete the files
-      const { deleteItem: deleteItemApi } = await import("@/lib/tauri-api");
-      const trashPath = await deleteItemApi(node.path, collectionName);
-      const { useUndoStore } = await import("@/stores/undo-store");
-      useUndoStore.getState().pushUndo({
-        type: "delete",
-        path: node.path,
-        collectionPath,
-        collectionName,
-        trashPath,
-      });
+      await useCollectionStore.getState().deleteCollection(node.path, collectionName);
     } catch (err) {
       import("@/stores/toast-store").then(({ useToastStore }) =>
         useToastStore.getState().showError(`Failed to delete collection: ${err}`),
@@ -623,10 +606,13 @@ function TreeNodeRow({
   // Folder or Collection
   return (
     <>
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => toggleExpand(node.path)}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") toggleExpand(node.path); }}
         onContextMenu={handleContextMenu}
-        className="group flex w-full items-center gap-1.5 rounded px-2 py-1 text-left text-sm hover:bg-[var(--color-elevated)]"
+        className="group flex w-full cursor-pointer items-center gap-1.5 rounded px-2 py-1 text-left text-sm hover:bg-[var(--color-elevated)]"
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
       >
         {node.type !== "collection" && (
@@ -715,7 +701,7 @@ function TreeNodeRow({
             )}
           </span>
         )}
-      </button>
+      </div>
 
       {contextMenu && (
         <ContextMenu
@@ -788,6 +774,14 @@ function TreeNodeRow({
                     },
                   },
                   {
+                    label: t("cookies.title"),
+                    icon: Cookie,
+                    onClick: () => {
+                      closeContextMenu();
+                      setCookieJarPath(node.path);
+                    },
+                  },
+                  {
                     label: t("sidebar.closeCollection"),
                     icon: FolderX,
                     onClick: () => {
@@ -816,6 +810,14 @@ function TreeNodeRow({
         <CookieSettingsDialog
           collectionPath={cookieSettingsPath}
           onClose={() => setCookieSettingsPath(null)}
+        />
+      )}
+      {cookieJarPath && (
+        <CookieJarDialog
+          open={!!cookieJarPath}
+          onOpenChange={(open) => { if (!open) setCookieJarPath(null); }}
+          collectionPath={cookieJarPath}
+          collectionName={collectionName}
         />
       )}
       <InputDialog
@@ -1140,13 +1142,26 @@ function ContextMenu({
     danger?: boolean;
   }[];
 }) {
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState({ left: x, top: y });
+
+  useEffect(() => {
+    if (menuRef.current) {
+      const rect = menuRef.current.getBoundingClientRect();
+      const newLeft = rect.right > window.innerWidth ? Math.max(0, x - rect.width) : x;
+      const newTop = rect.bottom > window.innerHeight ? Math.max(0, window.innerHeight - rect.height) : y;
+      setPosition({ left: newLeft, top: newTop });
+    }
+  }, [x, y]);
+
   return createPortal(
     <>
       {/* Backdrop */}
       <div className="fixed inset-0 z-40" onMouseDown={onClose} />
       <div
-        className="fixed z-50 min-w-[160px] rounded border border-[var(--color-border)] bg-[var(--color-elevated)] py-1 shadow-lg"
-        style={{ left: x, top: y }}
+        ref={menuRef}
+        className="fixed z-50 min-w-[160px] max-h-[80vh] overflow-y-auto rounded border border-[var(--color-border)] bg-[var(--color-elevated)] py-1 shadow-lg"
+        style={{ left: position.left, top: position.top }}
       >
         {items.map((item) => (
           <button

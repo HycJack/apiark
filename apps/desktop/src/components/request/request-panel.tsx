@@ -182,48 +182,72 @@ function PathVariablesEditor({
   const handleAdd = () => {
     const name = newVarName.trim();
     if (!name || pathVars.includes(name)) return;
-    // Append :paramName to the URL
     const separator = url.endsWith("/") ? "" : "/";
     onUrlChange(`${url}${separator}:${name}`);
     setNewVarName("");
   };
 
+  const handleRemove = (param: string) => {
+    // Remove :param from the URL
+    const updated = url
+      .replace(new RegExp(`/:${param}(?=/|$)`), "")
+      .replace(new RegExp(`:${param}(?=/|$)`), "");
+    onUrlChange(updated || "/");
+    const next = { ...values };
+    delete next[param];
+    onChange(next);
+  };
+
+  if (pathVars.length === 0 && !newVarName) return null;
+
   return (
-    <div>
-      <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-secondary)]">
-        {t("request.pathVariables")}
-      </label>
-      <div className="space-y-1">
-        {pathVars.map((param) => (
-          <div key={param} className="grid grid-cols-[1fr_1fr] gap-2">
-            <div className="flex items-center rounded bg-[var(--color-elevated)] px-3 py-1.5 text-sm text-purple-400">
-              :{param}
-            </div>
-            <input
-              type="text"
-              value={values[param] ?? ""}
-              onChange={(e) => handleChange(param, e.target.value)}
-              placeholder={t("request.value")}
-              className="rounded bg-[var(--color-elevated)] px-3 py-1.5 text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-dimmed)] outline-none focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
-        ))}
+    <div className="space-y-1">
+      {/* Header row — matches KeyValueEditor layout */}
+      <div className="grid grid-cols-[1fr_1fr_auto] items-center gap-2 px-1 text-xs text-[var(--color-text-muted)]">
+        <span>{t("request.pathVariables")}</span>
+        <span>{t("request.value")}</span>
+        <span className="w-7" />
       </div>
-      <div className="mt-2 flex gap-2">
+
+      {/* Rows */}
+      {pathVars.map((param) => (
+        <div key={param} className="grid grid-cols-[1fr_1fr_auto] items-center gap-2 px-1">
+          <div className="flex items-center rounded bg-[var(--color-elevated)] px-2 py-1 text-sm font-medium text-purple-400">
+            :{param}
+          </div>
+          <input
+            type="text"
+            value={values[param] ?? ""}
+            onChange={(e) => handleChange(param, e.target.value)}
+            placeholder={t("request.value")}
+            className="rounded bg-[var(--color-elevated)] px-2 py-1 text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-dimmed)] outline-none focus:ring-1 focus:ring-blue-500"
+          />
+          <button
+            onClick={() => handleRemove(param)}
+            className="rounded p-1 text-[var(--color-text-muted)] hover:bg-[var(--color-border)] hover:text-red-400"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      ))}
+
+      {/* Add row */}
+      <div className="grid grid-cols-[1fr_1fr_auto] items-center gap-2 px-1">
         <input
           type="text"
           value={newVarName}
           onChange={(e) => setNewVarName(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
           placeholder={t("request.variableName")}
-          className="flex-1 rounded bg-[var(--color-elevated)] px-3 py-1.5 text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-dimmed)] outline-none focus:ring-1 focus:ring-blue-500"
+          className="rounded bg-[var(--color-elevated)] px-2 py-1 text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-dimmed)] outline-none focus:ring-1 focus:ring-blue-500"
         />
+        <div />
         <button
           onClick={handleAdd}
           disabled={!newVarName.trim() || pathVars.includes(newVarName.trim())}
-          className="rounded bg-[var(--color-elevated)] px-3 py-1.5 text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-text-primary)] disabled:opacity-40"
+          className="rounded p-1 text-[var(--color-text-muted)] hover:bg-[var(--color-border)] hover:text-[var(--color-text-primary)] disabled:opacity-40"
         >
-          + {t("request.addRow")}
+          <Plus className="h-3.5 w-3.5" />
         </button>
       </div>
     </div>

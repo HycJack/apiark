@@ -43,6 +43,10 @@ interface CollectionState {
     collectionName: string,
     collectionPath: string,
   ) => Promise<void>;
+  deleteCollection: (
+    path: string,
+    name: string,
+  ) => Promise<void>;
   renameItem: (
     path: string,
     newName: string,
@@ -222,6 +226,26 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
       trashPath,
     });
     await get().refreshCollection(collectionPath);
+  },
+
+  deleteCollection: async (path, name) => {
+    // 1. Close all tabs belonging to this collection
+    const tabStore = (await import("@/stores/tab-store")).useTabStore;
+    const tabsToClose = tabStore.getState().tabs.filter((t) => t.collectionPath === path);
+    for (const tab of tabsToClose) {
+      tabStore.getState().closeTab(tab.id);
+    }
+    // 2. Stop the file watcher and remove from sidebar
+    get().closeCollection(path);
+    // 3. Now delete the files (after watcher is stopped to avoid race conditions)
+    const trashPath = await deleteItemApi(path, name);
+    useUndoStore.getState().pushUndo({
+      type: "delete",
+      path,
+      collectionPath: path,
+      collectionName: name,
+      trashPath,
+    });
   },
 
   renameItem: async (path, newName, collectionPath) => {

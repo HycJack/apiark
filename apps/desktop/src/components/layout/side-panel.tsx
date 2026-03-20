@@ -6,7 +6,7 @@ import { EnvironmentSelector } from "@/components/environment/environment-select
 import { HistoryPanel } from "@/components/history/history-panel";
 import { FolderOpen, FolderPlus, Plus, Search, Trash2, X, Upload, FolderX, ChevronDown, ChevronRight, Folder, Globe, Pencil } from "lucide-react";
 import { open } from "@tauri-apps/plugin-dialog";
-import { createCollection, saveEnvironment, deleteItem as deleteItemApi } from "@/lib/tauri-api";
+import { createCollection, saveEnvironment } from "@/lib/tauri-api";
 import { useEnvironmentStore } from "@/stores/environment-store";
 import { useSettingsStore } from "@/stores/settings-store";
 import type { EnvironmentData, CollectionNode } from "@apiark/types";
@@ -251,17 +251,7 @@ function CollectionsPanel({ onOpenImport }: { onOpenImport?: () => void }) {
                   const { path, name } = deleteCollectionTarget;
                   setDeleteCollectionTarget(null);
                   try {
-                    // Close tabs belonging to this collection first
-                    const { useTabStore } = await import("@/stores/tab-store");
-                    const tabStore = useTabStore.getState();
-                    const tabsToClose = tabStore.tabs.filter((t) => t.collectionPath === path);
-                    for (const tab of tabsToClose) {
-                      tabStore.closeTab(tab.id);
-                    }
-                    // Close collection from sidebar (stops file watcher)
-                    closeCollection(path);
-                    // Now delete the files
-                    await deleteItemApi(path, name);
+                    await useCollectionStore.getState().deleteCollection(path, name);
                   } catch (err) {
                     import("@/stores/toast-store").then(({ useToastStore }) =>
                       useToastStore.getState().showError(`Failed to delete collection: ${err}`),

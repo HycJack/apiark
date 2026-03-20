@@ -314,7 +314,13 @@ export function TabBar() {
       <div className="flex items-center gap-1 pb-1.5">
         {activeTab?.isDirty && (
           <button
-            onClick={save}
+            onClick={() => {
+              if (activeTab && !activeTab.filePath) {
+                window.dispatchEvent(new CustomEvent("apiark:open-save-as"));
+              } else {
+                save();
+              }
+            }}
             className="flex shrink-0 items-center gap-1.5 rounded-lg bg-[var(--color-elevated)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-border)] hover:text-[var(--color-text-primary)]"
             title="Save (Ctrl+S)"
           >

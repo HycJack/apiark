@@ -123,6 +123,13 @@ function App() {
     return () => window.removeEventListener("apiark:open-curl-import", handler);
   }, []);
 
+  // Listen for save-as event from TabBar save button
+  useEffect(() => {
+    const handler = () => setSaveAsOpen(true);
+    window.addEventListener("apiark:open-save-as", handler);
+    return () => window.removeEventListener("apiark:open-save-as", handler);
+  }, []);
+
   // Toggle side panel when clicking same activity view
   const handleViewChange = useCallback((view: ActivityView) => {
     if (view === activeView && sidePanelVisible) {

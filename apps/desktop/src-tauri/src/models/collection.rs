@@ -18,7 +18,7 @@ fn default_version() -> u32 {
     1
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CollectionDefaults {
     pub auth: Option<AuthConfig>,
@@ -28,6 +28,17 @@ pub struct CollectionDefaults {
     pub store_cookies: bool,
     #[serde(default)]
     pub persist_cookies: bool,
+}
+
+impl Default for CollectionDefaults {
+    fn default() -> Self {
+        Self {
+            auth: None,
+            send_cookies: true,
+            store_cookies: true,
+            persist_cookies: false,
+        }
+    }
 }
 
 fn default_true() -> bool {

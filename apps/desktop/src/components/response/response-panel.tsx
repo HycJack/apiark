@@ -137,7 +137,7 @@ export function ResponsePanel() {
           const formattedBody = tryFormatBody(response.body, language);
           return (
             <>
-              <ResponseBodyActions body={response.body} />
+              <ResponseBodyActions body={formattedBody} />
               {response.truncated && <TruncationBanner response={response} />}
               <div className="min-h-0 flex-1">
                 <CodeEditor
