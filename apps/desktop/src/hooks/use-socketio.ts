@@ -224,7 +224,7 @@ export function useSocketIo(connectionId: string): UseSocketIoReturn {
   }, [connectionId, handleRawMessage]);
 
   const connect = useCallback(
-    async (url: string, namespace: string, headers: KeyValuePair[], auth?: Record<string, unknown>) => {
+    async (url: string, namespace: string, headers: KeyValuePair[], _auth?: Record<string, unknown>) => {
       setError(null);
       setStatus("connecting");
       namespaceRef.current = namespace || "/";
