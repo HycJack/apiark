@@ -186,7 +186,7 @@ jobs:
             <Identity Name="ApiArk" Version="${version}.0" Publisher="CN=04976806-CCFC-4659-844E-36E0AF5D0C70" ProcessorArchitecture="x64" />
             <Properties>
               <DisplayName>ApiArk</DisplayName>
-              <PublisherDisplayName>ApiArk</PublisherDisplayName>
+              <PublisherDisplayName>berbicanes</PublisherDisplayName>
               <Description>Local-first API development platform</Description>
               <Logo>Assets\Square150x150Logo.png</Logo>
             </Properties>
