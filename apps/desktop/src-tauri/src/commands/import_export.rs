@@ -170,6 +170,7 @@ pub fn import_environment(file_path: &str, collection_path: &str) -> Result<Stri
         name: name.clone(),
         variables,
         secrets: Vec::new(),
+        scope: Default::default(),
     };
 
     crate::storage::environment::save_environment(Path::new(collection_path), &env)?;

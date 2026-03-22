@@ -13,6 +13,7 @@ import type { EnvironmentData, CollectionNode } from "@apiark/types";
 import * as Dialog from "@radix-ui/react-dialog";
 import type { ActivityView } from "./activity-bar";
 import { ProxySidePanel as ProxySidePanelView } from "@/components/proxy/proxy-panel";
+import { GitPanel as GitPanelView } from "@/components/git/git-panel";
 
 interface SidePanelProps {
   activeView: ActivityView;
@@ -40,6 +41,7 @@ export function SidePanel({
     monitor: t("monitor.title"),
     docs: t("docs.title"),
     proxy: "Proxy Capture",
+    git: "Git",
   };
 
   const sidebarWidth = useSettingsStore((s) => s.settings.sidebarWidth);
@@ -65,6 +67,7 @@ export function SidePanel({
         {activeView === "monitor" && <ToolPanel description={t("monitor.createDesc")} actionLabel={t("monitor.newMonitor")} onAction={onOpenMonitor} />}
         {activeView === "docs" && <ToolPanel description={t("docs.generateDesc")} actionLabel={t("docs.generateDocs")} onAction={onOpenDocs} />}
         {activeView === "proxy" && <ProxySidePanelView />}
+        {activeView === "git" && <GitPanelView />}
       </div>
     </div>
   );
@@ -700,7 +703,14 @@ function EnvironmentsPanel({
                   : "text-[var(--color-text-primary)] hover:bg-[var(--color-elevated)]"
               }`}
             >
-              <span className="truncate">{env.name}</span>
+              <div className="flex items-center gap-1.5 truncate">
+                <span className="truncate">{env.name}</span>
+                {env.scope === "personal" && (
+                  <span className="shrink-0 rounded bg-amber-500/15 px-1 py-0.5 text-[8px] font-bold text-amber-400">
+                    LOCAL
+                  </span>
+                )}
+              </div>
               <span className="shrink-0 text-[10px] text-[var(--color-text-dimmed)]">
                 {Object.keys(env.variables).length} vars
               </span>
@@ -738,12 +748,14 @@ function EnvironmentEditor({
     },
   );
 
+  const [scope, setScope] = useState<"shared" | "personal">(env.scope ?? "shared");
+
   const handleSave = () => {
     const vars: Record<string, string> = {};
     for (const v of variables) {
       if (v.key.trim()) vars[v.key.trim()] = v.value;
     }
-    onSave({ ...env, name: name.trim() || env.name, variables: vars });
+    onSave({ ...env, name: name.trim() || env.name, variables: vars, scope });
   };
 
   const updateVar = (index: number, field: "key" | "value", val: string) => {
@@ -782,6 +794,31 @@ function EnvironmentEditor({
           className="shrink-0 rounded bg-[var(--color-accent)] px-2.5 py-1 text-xs font-medium text-white hover:bg-[var(--color-accent-hover)]"
         >
           {t("common.save")}
+        </button>
+      </div>
+
+      {/* Scope toggle */}
+      <div className="flex items-center gap-2 rounded bg-[var(--color-elevated)] px-2 py-1.5">
+        <span className="text-[10px] text-[var(--color-text-dimmed)]">Scope:</span>
+        <button
+          onClick={() => setScope("shared")}
+          className={`rounded px-2 py-0.5 text-[10px] font-medium ${
+            scope === "shared"
+              ? "bg-blue-500/20 text-blue-400"
+              : "text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]"
+          }`}
+        >
+          Shared
+        </button>
+        <button
+          onClick={() => setScope("personal")}
+          className={`rounded px-2 py-0.5 text-[10px] font-medium ${
+            scope === "personal"
+              ? "bg-amber-500/20 text-amber-400"
+              : "text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]"
+          }`}
+        >
+          Personal
         </button>
       </div>
 

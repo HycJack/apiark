@@ -255,6 +255,7 @@ export interface EnvironmentData {
   name: string;
   variables: Record<string, string>;
   secrets: string[];
+  scope?: "shared" | "personal";
 }
 
 // ── History Entry (matches Rust HistoryEntry) ──

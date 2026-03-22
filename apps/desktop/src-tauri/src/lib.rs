@@ -33,6 +33,9 @@ use commands::docs::{generate_docs, preview_docs};
 use commands::environment::{
     get_resolved_variables, load_environments, load_root_dotenv, save_environment,
 };
+use commands::git::{
+    git_commit, git_diff, git_init, git_log, git_pull, git_push, git_stage, git_status, git_unstage,
+};
 use commands::greet;
 use commands::grpc::{
     grpc_call_bidi_stream, grpc_call_client_stream, grpc_call_server_stream, grpc_call_unary,
@@ -362,6 +365,16 @@ pub fn run() {
             backup_current_binary,
             clear_backups,
             get_install_type,
+            // Git commands
+            git_status,
+            git_stage,
+            git_unstage,
+            git_commit,
+            git_push,
+            git_pull,
+            git_diff,
+            git_log,
+            git_init,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

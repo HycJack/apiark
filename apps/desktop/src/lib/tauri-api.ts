@@ -245,8 +245,9 @@ export async function loadRootDotenv(
 export async function saveEnvironment(
   collectionPath: string,
   env: EnvironmentData,
+  scope?: "shared" | "personal",
 ): Promise<void> {
-  await invoke<void>("save_environment", { collectionPath, env });
+  await invoke<void>("save_environment", { collectionPath, env, scope: scope ?? env.scope ?? null });
 }
 
 // ── History ──
@@ -817,4 +818,64 @@ export async function clearBackups(): Promise<void> {
 
 export async function getInstallType(): Promise<string> {
   return await invoke<string>("get_install_type", {});
+}
+
+// ── Git ──
+
+export interface GitChange {
+  path: string;
+  status: string;
+  staged: boolean;
+}
+
+export interface GitStatus {
+  isRepo: boolean;
+  branch: string;
+  isClean: boolean;
+  ahead: number;
+  behind: number;
+  changes: GitChange[];
+}
+
+export interface GitLogEntry {
+  hash: string;
+  message: string;
+  author: string;
+  date: string;
+}
+
+export async function gitStatus(collectionPath: string): Promise<GitStatus> {
+  return await invoke<GitStatus>("git_status", { collectionPath });
+}
+
+export async function gitStage(collectionPath: string, paths: string[]): Promise<void> {
+  return await invoke<void>("git_stage", { collectionPath, paths });
+}
+
+export async function gitUnstage(collectionPath: string, paths: string[]): Promise<void> {
+  return await invoke<void>("git_unstage", { collectionPath, paths });
+}
+
+export async function gitCommit(collectionPath: string, message: string): Promise<string> {
+  return await invoke<string>("git_commit", { collectionPath, message });
+}
+
+export async function gitPush(collectionPath: string): Promise<string> {
+  return await invoke<string>("git_push", { collectionPath });
+}
+
+export async function gitPull(collectionPath: string): Promise<string> {
+  return await invoke<string>("git_pull", { collectionPath });
+}
+
+export async function gitDiff(collectionPath: string, filePath?: string): Promise<string> {
+  return await invoke<string>("git_diff", { collectionPath, filePath: filePath ?? null });
+}
+
+export async function gitLog(collectionPath: string, limit?: number): Promise<GitLogEntry[]> {
+  return await invoke<GitLogEntry[]>("git_log", { collectionPath, limit: limit ?? 50 });
+}
+
+export async function gitInit(collectionPath: string): Promise<string> {
+  return await invoke<string>("git_init", { collectionPath });
 }
