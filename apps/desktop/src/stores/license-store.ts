@@ -24,7 +24,7 @@ const defaultStatus: LicenseStatus = {
   valid: true,
 };
 
-export const useLicenseStore = create<LicenseState>((set, get) => ({
+export const useLicenseStore = create<LicenseState>((set) => ({
   status: defaultStatus,
   loaded: false,
 
