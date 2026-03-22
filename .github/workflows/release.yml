@@ -183,7 +183,7 @@ jobs:
           <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
                    xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
                    xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities">
-            <Identity Name="ApiArk" Version="${version}.0" Publisher="CN=04976806-CCFC-4659-844E-36E0AF5D0C70" ProcessorArchitecture="x64" />
+            <Identity Name="berbicanes.ApiArk" Version="${version}.0" Publisher="CN=04976806-CCFC-4659-844E-36E0AF5D0C70" ProcessorArchitecture="x64" />
             <Properties>
               <DisplayName>ApiArk</DisplayName>
               <PublisherDisplayName>berbicanes</PublisherDisplayName>
