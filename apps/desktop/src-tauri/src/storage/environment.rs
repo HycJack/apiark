@@ -29,8 +29,7 @@ fn load_envs_from_dir(
         return Ok(());
     }
 
-    let entries =
-        fs::read_dir(dir).map_err(|e| format!("Failed to read environments dir: {e}"))?;
+    let entries = fs::read_dir(dir).map_err(|e| format!("Failed to read environments dir: {e}"))?;
 
     for entry in entries {
         let entry = entry.map_err(|e| format!("Failed to read dir entry: {e}"))?;

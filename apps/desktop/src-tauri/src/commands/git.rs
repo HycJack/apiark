@@ -174,7 +174,10 @@ pub async fn git_diff(
 }
 
 #[tauri::command]
-pub async fn git_log(collection_path: String, limit: Option<u32>) -> Result<Vec<GitLogEntry>, String> {
+pub async fn git_log(
+    collection_path: String,
+    limit: Option<u32>,
+) -> Result<Vec<GitLogEntry>, String> {
     let dir = Path::new(&collection_path);
     let limit_str = format!("-{}", limit.unwrap_or(50));
     let output = run_git(
