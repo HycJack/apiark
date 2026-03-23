@@ -73,6 +73,15 @@ pub async fn send_request(
         inject_jar_cookies(&mut interpolated, &cookie_jar, collection_path.as_deref());
     }
 
+    // Inherit collection-level auth if request has no auth
+    if interpolated.auth.is_none() || matches!(interpolated.auth, Some(AuthConfig::None)) {
+        if let Some(ref collection_auth) = defaults.auth {
+            if !matches!(collection_auth, AuthConfig::None) {
+                interpolated.auth = Some(collection_auth.clone());
+            }
+        }
+    }
+
     // Execute preRequest plugin hooks
     let mut _plugin_console: Vec<ConsoleEntry> = Vec::new();
     run_plugin_hooks(
@@ -186,6 +195,15 @@ pub async fn send_request_with_scripts(
     let defaults = load_defaults_for_collection(collection_path.as_deref());
     if defaults.send_cookies {
         inject_jar_cookies(&mut interpolated, &cookie_jar, collection_path.as_deref());
+    }
+
+    // Inherit collection-level auth if request has no auth
+    if interpolated.auth.is_none() || matches!(interpolated.auth, Some(AuthConfig::None)) {
+        if let Some(ref collection_auth) = defaults.auth {
+            if !matches!(collection_auth, AuthConfig::None) {
+                interpolated.auth = Some(collection_auth.clone());
+            }
+        }
     }
 
     let mut all_console: Vec<ConsoleEntry> = Vec::new();
