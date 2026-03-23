@@ -4,7 +4,7 @@ import { useCollectionStore } from "@/stores/collection-store";
 import { CollectionTree } from "@/components/collection/collection-tree";
 import { EnvironmentSelector } from "@/components/environment/environment-selector";
 import { HistoryPanel } from "@/components/history/history-panel";
-import { FolderOpen, FolderPlus, Plus, Search, Trash2, X, Upload, FolderX, ChevronDown, ChevronRight, Folder, Globe, Pencil } from "lucide-react";
+import { FolderOpen, FolderPlus, Plus, Search, Trash2, X, Upload, FolderX, ChevronDown, ChevronRight, Folder, Globe, Pencil, Settings } from "lucide-react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { createCollection, saveEnvironment } from "@/lib/tauri-api";
 import { useEnvironmentStore } from "@/stores/environment-store";
@@ -83,6 +83,7 @@ function CollectionsPanel({ onOpenImport }: { onOpenImport?: () => void }) {
   const [newCollectionOpen, setNewCollectionOpen] = useState(false);
   const [collectionMenu, setCollectionMenu] = useState<{ x: number; y: number; path: string; name: string } | null>(null);
   const [deleteCollectionTarget, setDeleteCollectionTarget] = useState<{ path: string; name: string } | null>(null);
+  const [defaultsPath, setDefaultsPath] = useState<string | null>(null);
 
   const handleOpenFolder = async () => {
     try {
@@ -181,6 +182,16 @@ function CollectionsPanel({ onOpenImport }: { onOpenImport?: () => void }) {
               >
                 <button
                   onClick={() => {
+                    setDefaultsPath(collectionMenu.path);
+                    setCollectionMenu(null);
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-[var(--color-text-primary)] hover:bg-[var(--color-border)]"
+                >
+                  <Settings className="h-3.5 w-3.5" />
+                  Collection Defaults
+                </button>
+                <button
+                  onClick={() => {
                     closeCollection(collectionMenu.path);
                     setCollectionMenu(null);
                   }}
@@ -275,7 +286,134 @@ function CollectionsPanel({ onOpenImport }: { onOpenImport?: () => void }) {
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
+
+      {/* Collection Defaults Dialog */}
+      {defaultsPath && (
+        <CollectionDefaultsDialog
+          collectionPath={defaultsPath}
+          onClose={() => setDefaultsPath(null)}
+        />
+      )}
     </div>
+  );
+}
+
+function CollectionDefaultsDialog({
+  collectionPath,
+  onClose,
+}: {
+  collectionPath: string;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation();
+  const [authType, setAuthType] = useState<string>("none");
+  const [token, setToken] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [apiKeyKey, setApiKeyKey] = useState("");
+  const [apiKeyValue, setApiKeyValue] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    import("@/lib/tauri-api").then(({ getCollectionDefaults }) => {
+      getCollectionDefaults(collectionPath).then((defaults) => {
+        if (defaults.auth) {
+          const auth = defaults.auth as Record<string, unknown>;
+          const type = (auth.type as string) ?? "none";
+          setAuthType(type);
+          if (type === "bearer") setToken((auth.token as string) ?? "");
+          if (type === "basic") {
+            setUsername((auth.username as string) ?? "");
+            setPassword((auth.password as string) ?? "");
+          }
+          if (type === "api-key") {
+            setApiKeyKey((auth.key as string) ?? "");
+            setApiKeyValue((auth.value as string) ?? "");
+          }
+        }
+        setLoading(false);
+      }).catch(() => setLoading(false));
+    });
+  }, [collectionPath]);
+
+  const handleSave = async () => {
+    let auth: Record<string, unknown> = { type: "none" };
+    if (authType === "bearer") auth = { type: "bearer", token };
+    else if (authType === "basic") auth = { type: "basic", username, password };
+    else if (authType === "api-key") auth = { type: "api-key", key: apiKeyKey, value: apiKeyValue, addTo: "header" };
+
+    const { getCollectionDefaults, updateCollectionDefaults } = await import("@/lib/tauri-api");
+    const current = await getCollectionDefaults(collectionPath);
+    await updateCollectionDefaults(collectionPath, { ...current, auth: auth as import("@apiark/types").AuthConfig });
+    onClose();
+  };
+
+  return (
+    <Dialog.Root open onOpenChange={(v) => { if (!v) onClose(); }}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/30" />
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] p-6 shadow-2xl focus:outline-none">
+          <Dialog.Title className="text-base font-semibold text-[var(--color-text-primary)]">
+            Collection Defaults
+          </Dialog.Title>
+          <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+            Auth configured here is inherited by all requests without their own auth.
+          </p>
+
+          {loading ? (
+            <div className="py-8 text-center text-sm text-[var(--color-text-dimmed)]">Loading...</div>
+          ) : (
+            <div className="mt-4 space-y-3">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-[var(--color-text-muted)]">
+                  {t("auth.type")}
+                </label>
+                <select
+                  value={authType}
+                  onChange={(e) => setAuthType(e.target.value)}
+                  className="w-full rounded bg-[var(--color-elevated)] px-3 py-1.5 text-sm text-[var(--color-text-primary)] outline-none"
+                >
+                  <option value="none">{t("auth.none")}</option>
+                  <option value="bearer">{t("auth.bearer")}</option>
+                  <option value="basic">{t("auth.basic")}</option>
+                  <option value="api-key">{t("auth.apiKey")}</option>
+                </select>
+              </div>
+
+              {authType === "bearer" && (
+                <input type="text" value={token} onChange={(e) => setToken(e.target.value)} placeholder={t("auth.token")}
+                  className="w-full rounded bg-[var(--color-elevated)] px-3 py-1.5 text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-dimmed)] outline-none" />
+              )}
+              {authType === "basic" && (
+                <div className="space-y-2">
+                  <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} placeholder={t("auth.username")}
+                    className="w-full rounded bg-[var(--color-elevated)] px-3 py-1.5 text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-dimmed)] outline-none" />
+                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t("auth.password")}
+                    className="w-full rounded bg-[var(--color-elevated)] px-3 py-1.5 text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-dimmed)] outline-none" />
+                </div>
+              )}
+              {authType === "api-key" && (
+                <div className="space-y-2">
+                  <input type="text" value={apiKeyKey} onChange={(e) => setApiKeyKey(e.target.value)} placeholder="Header name"
+                    className="w-full rounded bg-[var(--color-elevated)] px-3 py-1.5 text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-dimmed)] outline-none" />
+                  <input type="text" value={apiKeyValue} onChange={(e) => setApiKeyValue(e.target.value)} placeholder="Value"
+                    className="w-full rounded bg-[var(--color-elevated)] px-3 py-1.5 text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-dimmed)] outline-none" />
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button onClick={onClose} className="rounded-lg px-4 py-1.5 text-sm text-[var(--color-text-muted)] hover:bg-[var(--color-elevated)]">
+                  Cancel
+                </button>
+                <button onClick={handleSave} className="rounded-lg bg-[var(--color-accent)] px-4 py-1.5 text-sm font-medium text-white hover:bg-[var(--color-accent-hover)]">
+                  Save
+                </button>
+              </div>
+            </div>
+          )}
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }
 
