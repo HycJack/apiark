@@ -342,13 +342,14 @@ Decide based on the user's message: if they want a request generated, respond wi
 }
 
 /// Produce a user-friendly error message for common AI API failures.
+/// These messages emphasize that the user must supply their own valid API key/endpoint (BYOK).
 fn ai_error_message(status: u16, body: &str) -> String {
     match status {
-        401 => "Authentication failed. Please check your API key in Settings → AI.".to_string(),
-        403 => "Access denied. Your API key may be invalid, expired, or lack permission for the selected model. Please verify your API key and model in Settings → AI.".to_string(),
-        404 => "AI endpoint not found. Please verify the endpoint URL in Settings → AI.".to_string(),
-        429 => "Rate limit exceeded. Please wait a moment and try again.".to_string(),
-        _ => format!("AI API returned {status}: {body}"),
+        401 => "Authentication failed. The API key you provided is invalid or expired. Please update it in Settings → AI.".to_string(),
+        403 => "Access denied. Your API key may lack permission for the selected model. Please verify your API key and model in Settings → AI.".to_string(),
+        404 => "Endpoint not found. The AI endpoint URL you configured could not be reached. Please verify the URL in Settings → AI.".to_string(),
+        429 => "Rate limit exceeded on your API provider. Please wait a moment and try again, or check your plan's usage limits.".to_string(),
+        _ => format!("Your AI provider returned an error ({status}). Please verify your settings in Settings → AI. Details: {body}"),
     }
 }
 

@@ -9,7 +9,6 @@ import {
   ChevronDown,
   ChevronRight,
   Settings,
-  AlertCircle,
   Copy,
   Check,
   Trash2,
@@ -45,6 +44,7 @@ interface ChatMessage {
 interface AiAssistantDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onOpenSettings?: () => void;
 }
 
 export function AiAssistantDialog({ open, onOpenChange }: AiAssistantDialogProps) {
@@ -123,7 +123,7 @@ export function AiAssistantDialog({ open, onOpenChange }: AiAssistantDialogProps
     } catch (err) {
       addMessage({
         role: "assistant",
-        content: "Something went wrong",
+        content: "Could not reach your AI provider",
         error: String(err),
       });
     }
@@ -161,7 +161,7 @@ export function AiAssistantDialog({ open, onOpenChange }: AiAssistantDialogProps
     } catch (err) {
       addMessage({
         role: "assistant",
-        content: "Failed to generate tests",
+        content: "Could not generate tests — check your AI provider settings",
         error: String(err),
       });
     }
@@ -246,6 +246,11 @@ export function AiAssistantDialog({ open, onOpenChange }: AiAssistantDialogProps
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  const handleOpenSettings = () => {
+    onOpenChange(false);
+    window.dispatchEvent(new CustomEvent("apiark:open-settings"));
+  };
+
   const handleSubmit = () => {
     handleSend();
   };
@@ -260,6 +265,9 @@ export function AiAssistantDialog({ open, onOpenChange }: AiAssistantDialogProps
             <Dialog.Title className="flex items-center gap-2 text-sm font-semibold text-[var(--color-text-primary)]">
               <Sparkles className="h-4 w-4 text-purple-400" />
               AI Assistant
+              <span className="rounded bg-[var(--color-surface)] px-1.5 py-0.5 text-[9px] font-medium text-[var(--color-text-dimmed)] uppercase tracking-wider">
+                Optional
+              </span>
             </Dialog.Title>
             <div className="flex items-center gap-1">
               <button
@@ -290,17 +298,13 @@ export function AiAssistantDialog({ open, onOpenChange }: AiAssistantDialogProps
               <div className="flex items-center gap-2 mb-2">
                 <span className={`h-2 w-2 rounded-full ${isConfigured ? "bg-yellow-500" : "bg-red-500"}`} />
                 <span className="text-[var(--color-text-muted)]">
-                  {isConfigured ? "Configured — requires a valid API key to use" : "Not configured"}
+                  {isConfigured ? "Configured — using your own API key" : "Not configured — bring your own API key to use this optional feature"}
                 </span>
               </div>
               <p className="text-[var(--color-text-dimmed)]">
                 Configure your AI provider in{" "}
                 <button
-                  onClick={() => {
-                    onOpenChange(false);
-                    // Open settings
-                    window.dispatchEvent(new CustomEvent("apiark:open-settings"));
-                  }}
+                  onClick={handleOpenSettings}
                   className="text-purple-400 hover:underline"
                 >
                   Settings → AI
@@ -315,85 +319,122 @@ export function AiAssistantDialog({ open, onOpenChange }: AiAssistantDialogProps
             </div>
           )}
 
-          {/* Not configured warning */}
-          {!isConfigured && messages.length === 0 && (
-            <div className="flex flex-col items-center gap-3 px-6 py-10 text-center">
-              <AlertCircle className="h-8 w-8 text-amber-400" />
+          {/* Not configured — full setup screen */}
+          {!isConfigured && (
+            <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8 py-10 text-center">
+              <div className="rounded-full bg-purple-500/10 p-4">
+                <Sparkles className="h-10 w-10 text-purple-400" />
+              </div>
               <div>
-                <p className="text-sm font-medium text-[var(--color-text-primary)]">
-                  Optional: Set up your AI provider
+                <p className="text-base font-semibold text-[var(--color-text-primary)]">
+                  AI Assistant — Optional Feature
                 </p>
-                <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-                  This is an optional feature. To use the AI assistant, go to Settings → AI and add your own OpenAI, Anthropic, or any OpenAI-compatible API key.
-                  Supports OpenAI, Ollama, LM Studio, and more.
+                <p className="mt-2 text-sm text-[var(--color-text-muted)] leading-relaxed">
+                  This is an <strong>optional</strong> feature that requires your own API key (BYOK).
+                  ApiArk does not include or provide an AI service — you bring your own.
                 </p>
               </div>
+              <div className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-left text-xs text-[var(--color-text-muted)] space-y-2">
+                <p className="font-medium text-[var(--color-text-secondary)]">To get started:</p>
+                <ol className="list-decimal ml-4 space-y-1">
+                  <li>Get an API key from your preferred AI provider</li>
+                  <li>Go to <strong>Settings → AI</strong> and enter your endpoint, key, and model</li>
+                  <li>Start chatting or generating requests</li>
+                </ol>
+                <p className="pt-1 text-[var(--color-text-dimmed)]">
+                  Supports any OpenAI-compatible API: OpenAI, Ollama, LM Studio, and more.
+                </p>
+              </div>
+              <button
+                onClick={handleOpenSettings}
+                className="rounded-lg bg-purple-600 px-5 py-2 text-sm font-medium text-white hover:bg-purple-700"
+              >
+                Open Settings
+              </button>
+              <p className="text-[10px] text-[var(--color-text-dimmed)]">
+                All other features of ApiArk work without AI configuration.
+              </p>
             </div>
           )}
 
-          {/* Messages */}
-          <div ref={logRef} className="flex-1 overflow-auto px-4 py-3 space-y-3">
-            {messages.map((msg) => (
-              <MessageBubble
-                key={msg.id}
-                message={msg}
-                copiedId={copiedId}
-                onCopy={handleCopy}
-                onApplyRequest={applyRequest}
-                onApplyTests={applyTests}
-                onRunRequest={handleRunRequest}
-                onDismissRun={handleDismissRun}
-              />
-            ))}
-            {loading && (
-              <div className="flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-purple-400" />
-                Thinking...
-              </div>
-            )}
-          </div>
-
-          {/* Quick actions */}
+          {/* Messages — only shown when configured */}
           {isConfigured && (
-            <div className="flex gap-1.5 border-t border-[var(--color-border)] px-4 py-2">
-              <button
-                onClick={handleGenerateTests}
-                disabled={loading || !tab?.response}
-                className="flex items-center gap-1.5 rounded-lg bg-[var(--color-elevated)] px-2.5 py-1.5 text-[10px] font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-border)] disabled:opacity-40"
-              >
-                <FlaskConical className="h-3 w-3" />
-                Generate Tests
-              </button>
-            </div>
-          )}
+            <>
+              {/* BYOK reminder banner */}
+              <div className="border-b border-[var(--color-border)] bg-amber-500/5 px-4 py-2 text-[10px] text-[var(--color-text-dimmed)]">
+                This optional feature connects to <strong>your own</strong> AI provider. ApiArk does not include an AI service.{" "}
+                Errors below mean your API key or endpoint needs attention in{" "}
+                <button onClick={handleOpenSettings} className="text-purple-400 hover:underline">Settings → AI</button>.
+              </div>
+              <div ref={logRef} className="flex-1 overflow-auto px-4 py-3 space-y-3">
+                {messages.length === 0 && (
+                  <div className="flex flex-col items-center gap-2 py-8 text-center text-xs text-[var(--color-text-dimmed)]">
+                    <Sparkles className="h-5 w-5 text-purple-400/40" />
+                    <p>Ask anything about APIs, generate requests, or create tests.</p>
+                  </div>
+                )}
+                {messages.map((msg) => (
+                  <MessageBubble
+                    key={msg.id}
+                    message={msg}
+                    copiedId={copiedId}
+                    onCopy={handleCopy}
+                    onApplyRequest={applyRequest}
+                    onApplyTests={applyTests}
+                    onRunRequest={handleRunRequest}
+                    onDismissRun={handleDismissRun}
+                    onOpenSettings={handleOpenSettings}
+                  />
+                ))}
+                {loading && (
+                  <div className="flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-purple-400" />
+                    Thinking...
+                  </div>
+                )}
+              </div>
 
-          {/* Input */}
-          <div className="border-t border-[var(--color-border)] px-4 py-3">
-            <div className="flex items-end gap-2">
-              <textarea
-                ref={inputRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder={isConfigured ? "Describe an API request..." : "Configure AI provider first"}
-                disabled={!isConfigured || loading}
-                className="flex-1 resize-none rounded-lg bg-[var(--color-elevated)] px-3 py-2 text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-dimmed)] outline-none focus:ring-1 focus:ring-purple-500 disabled:opacity-50"
-                rows={2}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSubmit();
-                  }
-                }}
-              />
-              <button
-                onClick={handleSubmit}
-                disabled={!isConfigured || loading || !input.trim()}
-                className="flex items-center gap-1 rounded-lg bg-purple-600 px-3 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50"
-              >
-                <Send className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          </div>
+              {/* Quick actions */}
+              <div className="flex gap-1.5 border-t border-[var(--color-border)] px-4 py-2">
+                <button
+                  onClick={handleGenerateTests}
+                  disabled={loading || !tab?.response}
+                  className="flex items-center gap-1.5 rounded-lg bg-[var(--color-elevated)] px-2.5 py-1.5 text-[10px] font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-border)] disabled:opacity-40"
+                >
+                  <FlaskConical className="h-3 w-3" />
+                  Generate Tests
+                </button>
+              </div>
+
+              {/* Input */}
+              <div className="border-t border-[var(--color-border)] px-4 py-3">
+                <div className="flex items-end gap-2">
+                  <textarea
+                    ref={inputRef}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    placeholder="Describe an API request..."
+                    disabled={loading}
+                    className="flex-1 resize-none rounded-lg bg-[var(--color-elevated)] px-3 py-2 text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-dimmed)] outline-none focus:ring-1 focus:ring-purple-500 disabled:opacity-50"
+                    rows={2}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSubmit();
+                      }
+                    }}
+                  />
+                  <button
+                    onClick={handleSubmit}
+                    disabled={loading || !input.trim()}
+                    className="flex items-center gap-1 rounded-lg bg-purple-600 px-3 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50"
+                  >
+                    <Send className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
@@ -408,6 +449,7 @@ function MessageBubble({
   onApplyTests,
   onRunRequest,
   onDismissRun,
+  onOpenSettings,
 }: {
   message: ChatMessage;
   copiedId: string | null;
@@ -416,6 +458,7 @@ function MessageBubble({
   onApplyTests: (tests: { tests: string; assertions: string | null }) => void;
   onRunRequest: () => void;
   onDismissRun: () => void;
+  onOpenSettings?: () => void;
 }) {
   const [showDebug, setShowDebug] = useState(false);
   const isUser = message.role === "user";
@@ -435,7 +478,17 @@ function MessageBubble({
 
         {/* Error */}
         {message.error && (
-          <p className="mt-1 text-xs text-red-400">{message.error}</p>
+          <>
+            <p className="mt-1 text-xs text-red-400">{message.error}</p>
+            <p className="mt-1.5 text-[10px] text-[var(--color-text-dimmed)]">
+              This optional feature uses your own API key.{" "}
+              {onOpenSettings && (
+                <button onClick={onOpenSettings} className="text-purple-400 hover:underline">
+                  Check Settings → AI
+                </button>
+              )}
+            </p>
+          </>
         )}
 
         {/* Run prompt */}
